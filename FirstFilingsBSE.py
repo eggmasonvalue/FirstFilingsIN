@@ -5,28 +5,23 @@ import time
 TOTAL_RETRIES = 5  # Number of retries for fetching filings
 RETRY_DELAY = 3  # Delay in seconds between retries
 
-filing_category = 'Company Update'
-subcategory_general = "General" 
+filing_category = "Company Update"
+subcategory_general = "General"
 
 filing_subcategory = {
-    "Analyst Call Intimation": [
-        "Analyst / Investor Meet"
-    ],
+    "Analyst Call Intimation": ["Analyst / Investor Meet"],
     "Press Release": [
         "Press Release / Media Release",
-    #     "Press Release / Media Release (Revised)", 
-    #     "Press release (Revised)"
-    #     it can't be the first filing if it is a revised press release
-    #     likely to not be a catch-all since a lot of general category announcements could contain press release style information
+        #     "Press Release / Media Release (Revised)",
+        #     "Press release (Revised)"
+        #     it can't be the first filing if it is a revised press release
+        #     likely to not be a catch-all since a lot of general category announcements could contain press release style information
     ],
-    "PPT": [
-        "Investor Presentation",
-        subcategory_general
-    ]
+    "PPT": ["Investor Presentation", subcategory_general],
 }
 
 filing_subcategory_general_keyword = {
-    # "Analyst Call Intimation": 
+    # "Analyst Call Intimation":
     #     "Analyst / Investor Meet",
     # "Press Release":"Release",
     "PPT": "Presentation"
@@ -34,13 +29,7 @@ filing_subcategory_general_keyword = {
 
 
 def fetch_paginated_announcements(
-    bse,
-    from_date,
-    to_date,
-    category,
-    subcategory,
-    scripcode=None,
-    segment="equity"
+    bse, from_date, to_date, category, subcategory, scripcode=None, segment="equity"
 ):
     """Fetch all paginated announcements for given filters."""
     all_ann = []
@@ -55,12 +44,13 @@ def fetch_paginated_announcements(
                 category=category,
                 subcategory=subcategory,
                 scripcode=str(scripcode) if scripcode else None,
-                segment=segment
+                segment=segment,
             )
             if total_count is None:
                 total_count = (
                     data.get("Table1", [{}])[0].get("ROWCNT", 0)
-                    if data.get("Table1") else 0
+                    if data.get("Table1")
+                    else 0
                 )
             page_ann = data.get("Table", [])
             all_ann.extend(page_ann)
@@ -77,7 +67,7 @@ def fetch_announcements_for_date(bse, date: datetime):
     print(f"Fetching announcements for {date.strftime('%Y-%m-%d')} ...")
     results = {}
     for subcat_label, subcats in filing_subcategory.items():
-        results_list = [] 
+        results_list = []
         for subcat in subcats:
             # key = f"{subcat_label} - {subcat}"
             # print(key)
@@ -89,34 +79,52 @@ def fetch_announcements_for_date(bse, date: datetime):
                     from_date=date,
                     to_date=date,
                     category=filing_category,
-                    subcategory=subcat
+                    subcategory=subcat,
                 )
                 # Improved error check: treat only str as error, otherwise treat as valid result
                 if isinstance(ann, str):
-                    print(f"  Error fetching announcements for {subcat_label} - {subcat}: {ann} (retry {retries+1}/{TOTAL_RETRIES})")
+                    print(
+                        f"  Error fetching announcements for {subcat_label} - {subcat}: {ann} (retry {retries + 1}/{TOTAL_RETRIES})"
+                    )
                     retries += 1
                     time.sleep(RETRY_DELAY)
                 elif isinstance(ann, list):
                     # print(f"  Successfully fetched announcements for {subcat_label} - {subcat}")
                     break
                 else:
-                    print(f"  Unexpected result type for {subcat_label} - {subcat}: {type(ann)}. Skipping.")
+                    print(
+                        f"  Unexpected result type for {subcat_label} - {subcat}: {type(ann)}. Skipping."
+                    )
                     ann = []
                     break
             if isinstance(ann, str):
-                print(f"  Failed to fetch announcements for {subcat_label} - {subcat} after {TOTAL_RETRIES} retries, skipping.")
+                print(
+                    f"  Failed to fetch announcements for {subcat_label} - {subcat} after {TOTAL_RETRIES} retries, skipping."
+                )
                 continue
 
             # Only filter if ann is a list (not an error string)
             if isinstance(ann, list):
                 # For 'General' subcategory, filter by keyword in NEWSSUB or HEADLINE
-                if subcat == subcategory_general and subcat_label in filing_subcategory_general_keyword:
+                if (
+                    subcat == subcategory_general
+                    and subcat_label in filing_subcategory_general_keyword
+                ):
                     keyword = filing_subcategory_general_keyword[subcat_label]
                     ann = [
-                        filing for filing in ann
+                        filing
+                        for filing in ann
                         if (
-                            (isinstance(filing, dict) and filing.get("NEWSSUB") and keyword.lower() in filing["NEWSSUB"].lower())
-                            or (isinstance(filing, dict) and filing.get("HEADLINE") and keyword.lower() in filing["HEADLINE"].lower())
+                            (
+                                isinstance(filing, dict)
+                                and filing.get("NEWSSUB")
+                                and keyword.lower() in filing["NEWSSUB"].lower()
+                            )
+                            or (
+                                isinstance(filing, dict)
+                                and filing.get("HEADLINE")
+                                and keyword.lower() in filing["HEADLINE"].lower()
+                            )
                         )
                     ]
                 results_list.extend(ann)
@@ -128,7 +136,9 @@ def fetch_announcements_for_date(bse, date: datetime):
 def is_first_filing(bse, scrip_cd, subcat_label, input_date, lookback_years, longname):
     """Check if this is the first filing for the scrip/subcategory label in the lookback period."""
     lookback_start = input_date - timedelta(days=lookback_years * 365)
-    print(f" Checking if it is the first {subcat_label} for {longname} in the last {lookback_years} years ...")
+    print(
+        f" Checking if it is the first {subcat_label} for {longname} in the last {lookback_years} years ..."
+    )
     all_filings = []
     for subcat_values in filing_subcategory[subcat_label]:
         retries = 0
@@ -140,36 +150,54 @@ def is_first_filing(bse, scrip_cd, subcat_label, input_date, lookback_years, lon
                 to_date=input_date,
                 category=filing_category,
                 subcategory=subcat_values,
-                scripcode=scrip_cd
+                scripcode=scrip_cd,
             )
             # Improved error check: treat only str as error, otherwise treat as valid result
             if isinstance(filings, str):
-                print(f"    Error fetching filings for {longname}: {filings} (retry {retries+1}/{TOTAL_RETRIES})")
+                print(
+                    f"    Error fetching filings for {longname}: {filings} (retry {retries + 1}/{TOTAL_RETRIES})"
+                )
                 retries += 1
                 time.sleep(RETRY_DELAY)
             elif isinstance(filings, list):
                 # print(f"    Successfully fetched filings for {longname} - {subcat_values}")
                 break
             else:
-                print(f"    Unexpected result type for {longname} - {subcat_values}: {type(filings)}. Skipping.")
+                print(
+                    f"    Unexpected result type for {longname} - {subcat_values}: {type(filings)}. Skipping."
+                )
                 filings = []
                 break
         if isinstance(filings, str):
-            print(f"    Failed to fetch filings for {subcat_values} after {TOTAL_RETRIES} retries, skipping.")
+            print(
+                f"    Failed to fetch filings for {subcat_values} after {TOTAL_RETRIES} retries, skipping."
+            )
             continue
 
         # dump into json file for debugging
         # with open(f"filings_{scrip_cd}_{subcat_label}.json", "w") as f:
         #     import json
-        #     json.dump(filings, f, indent=4) 
+        #     json.dump(filings, f, indent=4)
         # For 'General' subcategory, filter by keyword in NEWSSUB or HEADLINE
-        if subcat_values == subcategory_general and subcat_label in filing_subcategory_general_keyword:
+        if (
+            subcat_values == subcategory_general
+            and subcat_label in filing_subcategory_general_keyword
+        ):
             keyword = filing_subcategory_general_keyword[subcat_label]
             filings = [
-                filing for filing in filings
+                filing
+                for filing in filings
                 if (
-                    (isinstance(filing, dict) and filing.get("NEWSSUB") and keyword.lower() in filing["NEWSSUB"].lower())
-                    or (isinstance(filing, dict) and filing.get("HEADLINE") and keyword.lower() in filing["HEADLINE"].lower())
+                    (
+                        isinstance(filing, dict)
+                        and filing.get("NEWSSUB")
+                        and keyword.lower() in filing["NEWSSUB"].lower()
+                    )
+                    or (
+                        isinstance(filing, dict)
+                        and filing.get("HEADLINE")
+                        and keyword.lower() in filing["HEADLINE"].lower()
+                    )
                 )
             ]
         all_filings.extend(filings)
@@ -232,12 +260,16 @@ def parse_date_range(args):
 
     return from_date, to_date, lookback_years
 
+
 def main():
     import sys
+
     # Usage: python FirstFilingsToday.py [-W|-D|-M|-Q] YYYY-MM-DD [LOOKBACK_YEARS]
     args = sys.argv
     from_date, to_date, lookback_years = parse_date_range(args)
-    print(f"Starting: BSE First Filings from {from_date.strftime('%Y-%m-%d')} to {to_date.strftime('%Y-%m-%d')} with lookback period {lookback_years} years...")
+    print(
+        f"Starting: BSE First Filings from {from_date.strftime('%Y-%m-%d')} to {to_date.strftime('%Y-%m-%d')} with lookback period {lookback_years} years..."
+    )
     bse = BSE(download_folder=".")
     announcements = fetch_announcements_for_date_range(bse, from_date, to_date)
 
@@ -258,20 +290,26 @@ def main():
             # Use the filing date for lookback, fallback to to_date
             filing_date_str = filing.get("NEWS_DT") or filing.get("NEWS_DATE")
             try:
-                filing_date = datetime.strptime(filing_date_str, "%d %b %Y") if filing_date_str else to_date
+                filing_date = (
+                    datetime.strptime(filing_date_str, "%d %b %Y")
+                    if filing_date_str
+                    else to_date
+                )
             except Exception:
                 filing_date = to_date
-            is_first = is_first_filing(bse, scrip_cd, subcat_label, filing_date, lookback_years, longname)
+            is_first = is_first_filing(
+                bse, scrip_cd, subcat_label, filing_date, lookback_years, longname
+            )
             if is_first and longname:
                 first_filings.setdefault(subcat_label, []).append(longname)
 
     # Highlighted output
     print("\n" + "*" * 80)
-    print("First filings in the last {} years for range {} to {}:".format(
-        lookback_years,
-        from_date.strftime('%Y-%m-%d'),
-        to_date.strftime('%Y-%m-%d')
-    ))
+    print(
+        "First filings in the last {} years for range {} to {}:".format(
+            lookback_years, from_date.strftime("%Y-%m-%d"), to_date.strftime("%Y-%m-%d")
+        )
+    )
     if first_filings:
         for subcat_label, names in first_filings.items():
             for name in names:
@@ -284,7 +322,9 @@ def main():
 # New function to fetch announcements for a date range
 def fetch_announcements_for_date_range(bse, from_date, to_date):
     """Fetch all announcements for each subcategory in a date range."""
-    print(f"Fetching announcements from {from_date.strftime('%Y-%m-%d')} to {to_date.strftime('%Y-%m-%d')} ...")
+    print(
+        f"Fetching announcements from {from_date.strftime('%Y-%m-%d')} to {to_date.strftime('%Y-%m-%d')} ..."
+    )
     results = {}
     for subcat_label, subcats in filing_subcategory.items():
         results_list = []
@@ -297,30 +337,48 @@ def fetch_announcements_for_date_range(bse, from_date, to_date):
                     from_date=from_date,
                     to_date=to_date,
                     category=filing_category,
-                    subcategory=subcat
+                    subcategory=subcat,
                 )
                 if isinstance(ann, str):
-                    print(f"  Error fetching announcements for {subcat_label} - {subcat}: {ann} (retry {retries+1}/{TOTAL_RETRIES})")
+                    print(
+                        f"  Error fetching announcements for {subcat_label} - {subcat}: {ann} (retry {retries + 1}/{TOTAL_RETRIES})"
+                    )
                     retries += 1
                     time.sleep(RETRY_DELAY)
                 elif isinstance(ann, list):
                     break
                 else:
-                    print(f"  Unexpected result type for {subcat_label} - {subcat}: {type(ann)}. Skipping.")
+                    print(
+                        f"  Unexpected result type for {subcat_label} - {subcat}: {type(ann)}. Skipping."
+                    )
                     ann = []
                     break
             if isinstance(ann, str):
-                print(f"  Failed to fetch announcements for {subcat_label} - {subcat} after {TOTAL_RETRIES} retries, skipping.")
+                print(
+                    f"  Failed to fetch announcements for {subcat_label} - {subcat} after {TOTAL_RETRIES} retries, skipping."
+                )
                 continue
             if isinstance(ann, list):
                 # For 'General' subcategory, filter by keyword in NEWSSUB or HEADLINE
-                if subcat == subcategory_general and subcat_label in filing_subcategory_general_keyword:
+                if (
+                    subcat == subcategory_general
+                    and subcat_label in filing_subcategory_general_keyword
+                ):
                     keyword = filing_subcategory_general_keyword[subcat_label]
                     ann = [
-                        filing for filing in ann
+                        filing
+                        for filing in ann
                         if (
-                            (isinstance(filing, dict) and filing.get("NEWSSUB") and keyword.lower() in filing["NEWSSUB"].lower())
-                            or (isinstance(filing, dict) and filing.get("HEADLINE") and keyword.lower() in filing["HEADLINE"].lower())
+                            (
+                                isinstance(filing, dict)
+                                and filing.get("NEWSSUB")
+                                and keyword.lower() in filing["NEWSSUB"].lower()
+                            )
+                            or (
+                                isinstance(filing, dict)
+                                and filing.get("HEADLINE")
+                                and keyword.lower() in filing["HEADLINE"].lower()
+                            )
                         )
                     ]
                 results_list.extend(ann)
@@ -328,9 +386,6 @@ def fetch_announcements_for_date_range(bse, from_date, to_date):
     print("Done fetching all announcements for the date range.")
     return results
 
+
 if __name__ == "__main__":
     main()
-
-
-
-
