@@ -1,0 +1,62 @@
+[
+  {
+    "status": "success",
+    "reference_date": "2025-05-29",
+    "period": "day",
+    "lookback_years": 2,
+    "categories_checked": [
+      "Analyst Call Intimation"
+    ],
+    "filings": {
+      "Analyst Call Intimation": [
+        "Procter & Gamble Health Ltd"
+      ]
+    },
+    "errors": [],
+    "archived_at": "2026-02-17T12:03:27.309303"
+  },
+  {
+    "status": "success",
+    "reference_date": "2025-05-29",
+    "period": "day",
+    "lookback_years": 2,
+    "categories_checked": [
+      "Press Release"
+    ],
+    "filings": {
+      "Press Release": [
+        "Network People Services Technologies Ltd",
+        "Denta Water and Infra Solutions Ltd"
+      ]
+    },
+    "errors": [],
+    "archived_at": "2026-02-17T12:04:29.582630"
+  },
+  {
+    "status": "success",
+    "reference_date": "2025-05-29",
+    "period": "day",
+    "lookback_years": 2,
+    "categories_checked": [
+      "Analyst Call Intimation",
+      "Press Release",
+      "PPT"
+    ],
+    "filings": {
+      "Analyst Call Intimation": [
+        "Procter & Gamble Health Ltd"
+      ],
+      "Press Release": [
+        "Network People Services Technologies Ltd",
+        "Denta Water and Infra Solutions Ltd"
+      ],
+      "PPT": [
+        "Grindwell Norton Ltd-$",
+        " ",
+        "Denta Water and Infra Solutions Ltd"
+      ]
+    },
+    "errors": [],
+    "archived_at": "2026-02-17T12:10:31.816454"
+  }
+]

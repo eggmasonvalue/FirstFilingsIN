@@ -4,29 +4,52 @@
 
 ```mermaid
 graph TD
-    User[User / CLI] -->|Run Script with Date Range| Main[Main Controller]
-    Main -->|Fetch Announcements| Fetcher[Announcement Fetcher]
-    Fetcher -->|Get Data| BSE[BSE Library / API]
-    Main -->|Check History| Validator[First Filing Validator]
-    Validator -->|Fetch Historic Data| BSE
-    Validator -->|Result| Main
-    Main -->|Print Report| Console[Console Output]
+    User[User / CLI] -->|Run Script with Options| CLI[CLI Controller]
+    CLI -->|Setup Logging| Utils[Utils]
+    CLI -->|Fetch Announcements| Core[Core Logic]
+    Core -->|Get Data (with Retry)| Client[BSE Client]
+    Client -->|Fetch Data| BSE[BSE Library / API]
+    Core -->|Check History| Client
+    Client -->|Fetch Historic Data| BSE
+    CLI -->|Archive Result| Utils
+    CLI -->|Print JSON| Console[Console Output]
 ```
 
 ## Modules
 
-### `FirstFilingsBSE.py`
-The single-file script containing all logic.
+### `src/first_filings/cli.py`
+The entry point for the application using `click`.
+- **`main()`**: Parses arguments (`date`, `period`, `lookback_years`) and orchestrates the flow.
+- **`get_date_range()`**: Utility to calculate date ranges based on period.
 
--   **`main()`**: Entry point. Parses arguments and orchestrates the flow.
--   **`fetch_paginated_announcements`**: Low-level wrapper around `bse.announcements` to handle pagination.
--   **`fetch_announcements_for_date`/`fetch_announcements_for_date_range`**: Aggregates announcements for configured categories.
--   **`is_first_filing`**: Core logic. Checks finding if a filing is unique in the lookback window.
--   **`parse_date_range`**: Utility to handle `-WTD`, `-MTD`, `-QTD` flags.
+### `src/first_filings/core.py`
+Contains the business logic.
+- **`FirstFilingAnalyzer`**: Class to analyze filings.
+    - **`fetch_announcements`**: Fetches and filters announcements for a date range.
+    - **`is_first_filing`**: Checks if a filing is unique in the lookback window.
+    - **`_filter_announcements`**: Internal helper to filter by keywords.
+
+### `src/first_filings/bse_client.py`
+Handles interaction with the BSE library.
+- **`BSEClient`**: Wrapper around `bse` library.
+    - **`fetch_paginated_announcements`**: Fetches data with **exponential backoff** and retries (using `tenacity`).
+
+### `src/first_filings/config.py`
+Configuration constants.
+- **`FILING_CATEGORY`**, **`FILING_SUBCATEGORY`**: Categories to monitor.
+- **`TOTAL_RETRIES`**, **`RETRY_DELAY`**: Retry settings.
+
+### `src/first_filings/utils.py`
+Utility functions.
+- **`setup_logging`**: Configures logging to file.
+- **`print_json_output`**: Prints structured JSON to stdout.
+- **`archive_output`**: Appends result to archive file.
 
 ## Data Flow
-1.  **Input**: Date range, Lookback period.
-2.  **Process**: 
-    -   Fetch all announcements for the target date(s).
+1.  **Input**: Date, Period, Lookback period.
+2.  **Process**:
+    -   Calculate date range.
+    -   Fetch all announcements for the target range (with retries).
     -   For each announcement, query historical data (lookback period) to see if a similar announcement exists.
-3.  **Output**: List of companies with their "First Filing" of a certain type.
+3.  **Output**: Structured JSON object with list of companies with their "First Filing".
+4.  **Archive**: Result is appended to `first_filings_archive.json`.
