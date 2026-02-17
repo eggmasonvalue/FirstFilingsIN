@@ -6,30 +6,28 @@ The first investor presentation, analyst or earnings call intimation or media re
 
 ## Installation
 
-1. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-   Or using uv:
+This project uses `uv` for dependency management.
+
+1. Install `uv` if not already installed (see [uv docs](https://github.com/astral-sh/uv)).
+
+2. Sync dependencies:
    ```bash
    uv sync
    ```
 
-2. Install the package (optional but recommended):
+3. Install the package (optional but recommended):
    ```bash
-   pip install -e .
+   uv pip install -e .
    ```
 
 ## Usage
 
 ### Command Line Interface
 
+Run the tool using `uv run`:
+
 ```bash
-python -m first_filings.cli [OPTIONS]
-```
-Or if installed:
-```bash
-first-filings [OPTIONS]
+uv run first-filings [OPTIONS]
 ```
 
 ### Options
@@ -51,27 +49,27 @@ first-filings [OPTIONS]
 
 - Filings for a single day (07-06-2024):
   ```bash
-  first-filings --date 07-06-2024
+  uv run first-filings --date 07-06-2024
   ```
 
 - Filings for week-to-date ending 07-06-2024:
   ```bash
-  first-filings --date 07-06-2024 --period wtd
+  uv run first-filings --date 07-06-2024 --period wtd
   ```
 
 - Filings for month-to-date ending 07-06-2024:
   ```bash
-  first-filings --date 07-06-2024 --period mtd
+  uv run first-filings --date 07-06-2024 --period mtd
   ```
 
 - Filings for quarter-to-date ending 07-06-2024:
   ```bash
-  first-filings --date 07-06-2024 --period qtd
+  uv run first-filings --date 07-06-2024 --period qtd
   ```
 
 - Specify lookback period (in years):
   ```bash
-  first-filings --date 07-06-2024 --lookback-years 10
+  uv run first-filings --date 07-06-2024 --lookback-years 10
   ```
 
 ### Output
