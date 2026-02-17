@@ -1,7 +1,9 @@
 import click
 import logging
+import json
+import sys
 from datetime import datetime, timedelta
-from . import utils
+from . import config, utils
 from .bse_client import BSEClient
 from .core import FirstFilingAnalyzer
 
@@ -34,21 +36,39 @@ def get_date_range(date_obj, period):
 @click.command()
 @click.option('--date', type=click.DateTime(formats=["%d-%m-%Y", "%Y-%m-%d"]), default=lambda: datetime.now().strftime("%d-%m-%Y"), help="Reference date (DD-MM-YYYY or YYYY-MM-DD). Defaults to today.")
 @click.option('--period', type=click.Choice(['day', 'wtd', 'mtd', 'qtd'], case_sensitive=False), default='day', help="Fetch period: day, wtd (week-to-date), mtd (month-to-date), qtd (quarter-to-date).")
-@click.option('--lookback-years', type=int, default=15, help="Number of years to look back for history.")
-def main(date, period, lookback_years):
+@click.option('--lookback-years', type=int, default=2, help="Number of years to look back for history.")
+@click.option('-a', '--analyst-calls', is_flag=True, help="Fetch Analyst Call Intimations")
+@click.option('-p', '--press-releases', is_flag=True, help="Fetch Press Releases")
+@click.option('-t', '--presentations', is_flag=True, help="Fetch Investor Presentations (PPT)")
+def main(date, period, lookback_years, analyst_calls, press_releases, presentations):
     """
     Fetch and analyze BSE corporate announcements to identify first-time filings.
+    If no category flags are provided, all categories are fetched.
     """
     # Setup logging
     utils.setup_logging()
 
-    logger.info(f"Starting FirstFilings with date={date}, period={period}, lookback={lookback_years}")
+    # Determine categories
+    selected_categories = []
+    if analyst_calls:
+        selected_categories.append(config.CLI_FLAGS['analyst_calls'])
+    if press_releases:
+        selected_categories.append(config.CLI_FLAGS['press_releases'])
+    if presentations:
+        selected_categories.append(config.CLI_FLAGS['presentations'])
+
+    # Default to all if none selected
+    if not selected_categories:
+        selected_categories = list(config.FILING_SUBCATEGORY.keys())
+
+    logger.info(f"Starting FirstFilings with date={date}, period={period}, lookback={lookback_years}, categories={selected_categories}")
 
     result_data = {
         "status": "success",
         "reference_date": date.strftime("%Y-%m-%d"),
         "period": period,
         "lookback_years": lookback_years,
+        "categories_checked": selected_categories,
         "filings": {},
         "errors": []
     }
@@ -61,7 +81,7 @@ def main(date, period, lookback_years):
         analyzer = FirstFilingAnalyzer(bse_client)
 
         # 1. Fetch announcements for the period
-        announcements_by_cat = analyzer.fetch_announcements(from_date, to_date)
+        announcements_by_cat = analyzer.fetch_announcements(from_date, to_date, categories=selected_categories)
 
         # 2. Check for first filings
         first_filings = {}

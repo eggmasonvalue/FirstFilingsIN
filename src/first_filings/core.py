@@ -35,16 +35,26 @@ class FirstFilingAnalyzer:
 
         return announcements
 
-    def fetch_announcements(self, from_date, to_date):
+    def fetch_announcements(self, from_date, to_date, categories=None):
         """
         Fetch all announcements for each subcategory in a date range.
         Returns a dict: {subcategory_label: [announcements]}
+
+        :param categories: List of category labels to fetch. If None, fetch all.
         """
         logger.info(f"Fetching announcements from {from_date} to {to_date}")
         results = {}
 
-        for subcat_label, subcats in config.FILING_SUBCATEGORY.items():
+        target_categories = categories if categories else config.FILING_SUBCATEGORY.keys()
+
+        for subcat_label in target_categories:
+            if subcat_label not in config.FILING_SUBCATEGORY:
+                logger.warning(f"Category {subcat_label} not found in config.")
+                continue
+
+            subcats = config.FILING_SUBCATEGORY[subcat_label]
             results_list = []
+
             for subcat in subcats:
                 try:
                     ann = self.bse_client.fetch_paginated_announcements(
@@ -59,8 +69,6 @@ class FirstFilingAnalyzer:
 
                 except Exception as e:
                     logger.error(f"Failed to fetch announcements for {subcat_label} - {subcat}: {e}")
-                    # Continue to next subcategory even if one fails?
-                    # Yes, to be robust.
                     continue
 
             results[subcat_label] = results_list
@@ -90,13 +98,8 @@ class FirstFilingAnalyzer:
 
             except Exception as e:
                  logger.error(f"Failed to fetch historical filings for {longname} - {subcat_value}: {e}")
-                 # If we fail to fetch history, we can't determine if it's first.
-                 # To be safe, maybe return False? Or log and continue?
-                 # If we miss history, we might falsely report a first filing.
                  # Safest is to assume it's NOT a first filing if we can't verify history.
                  return False
 
         # If exactly one filing is found (the current one), then it is the first filing.
-        # Note: fetch_paginated_announcements returns filings in the range [lookback_start, filing_date].
-        # So the current filing should be in the list.
         return len(all_filings) == 1

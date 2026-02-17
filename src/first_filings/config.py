@@ -22,6 +22,14 @@ FILING_SUBCATEGORY_GENERAL_KEYWORD = {
     "PPT": "Presentation"
 }
 
+# CLI Flags mapping
+# Flag: Key in FILING_SUBCATEGORY
+CLI_FLAGS = {
+    "analyst_calls": "Analyst Call Intimation",
+    "press_releases": "Press Release",
+    "presentations": "PPT",
+}
+
 # Logging
 LOG_FILE = "first_filings.log"
 ARCHIVE_FILE = "first_filings_archive.json"

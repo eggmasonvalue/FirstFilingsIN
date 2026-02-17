@@ -43,31 +43,37 @@ uv run first-filings [OPTIONS]
   - `qtd`: Quarter-to-date (1st of quarter to reference date).
 
 - `--lookback-years INTEGER`
-  Number of years to look back for history. Defaults to 15.
+  Number of years to look back for history. Defaults to 2 (configurable).
+
+- `-a, --analyst-calls`
+  Fetch Analyst Call Intimations only.
+
+- `-p, --press-releases`
+  Fetch Press Releases only.
+
+- `-t, --presentations`
+  Fetch Investor Presentations (PPT) only.
+
+*Note: If no category flags (`-a`, `-p`, `-t`) are provided, ALL categories are fetched by default.*
 
 ### Examples
 
-- Filings for a single day (07-06-2024):
+- Filings for a single day (07-06-2024), default lookback (2 years):
   ```bash
   uv run first-filings --date 07-06-2024
   ```
 
-- Filings for week-to-date ending 07-06-2024:
+- Fetch only **Analyst Calls** for week-to-date ending 07-06-2024:
   ```bash
-  uv run first-filings --date 07-06-2024 --period wtd
+  uv run first-filings --date 07-06-2024 --period wtd -a
   ```
 
-- Filings for month-to-date ending 07-06-2024:
+- Fetch **Press Releases** and **Presentations** for month-to-date:
   ```bash
-  uv run first-filings --date 07-06-2024 --period mtd
+  uv run first-filings --date 07-06-2024 --period mtd -p -t
   ```
 
-- Filings for quarter-to-date ending 07-06-2024:
-  ```bash
-  uv run first-filings --date 07-06-2024 --period qtd
-  ```
-
-- Specify lookback period (in years):
+- Specify lookback period (e.g., 10 years):
   ```bash
   uv run first-filings --date 07-06-2024 --lookback-years 10
   ```
@@ -84,10 +90,10 @@ Example Output:
   "status": "success",
   "reference_date": "2024-06-07",
   "period": "day",
-  "lookback_years": 15,
+  "lookback_years": 2,
+  "categories_checked": ["Analyst Call Intimation"],
   "filings": {
-    "Press Release": ["Company A", "Company B"],
-    "PPT": []
+    "Analyst Call Intimation": ["Company A"]
   },
   "errors": []
 }
