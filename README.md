@@ -4,78 +4,103 @@ A script to fetch and analyze BSE corporate announcements, identifying first-tim
 ## Value Proposition
 The first investor presentation, analyst or earnings call intimation or media release often signifies the start of the market's discovery of the company or the promoter's interest in value creation via market capitalisation increase, often leading to rapid rerating.
 
+## Installation
+
+1. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+   Or using uv:
+   ```bash
+   uv sync
+   ```
+
+2. Install the package (optional but recommended):
+   ```bash
+   pip install -e .
+   ```
+
 ## Usage
+
+### Command Line Interface
+
 ```bash
-python FirstFilingsBSE.py [OPTION] DD-MM-YYYY [LOOKBACK_YEARS]
+python -m first_filings.cli [OPTIONS]
 ```
+Or if installed:
+```bash
+first-filings [OPTIONS]
+```
+
 ### Options
 
-- `-D DD-MM-YYYY`  
-  Fetch filings for the given day only.
+- `--date DATE`
+  Reference date (DD-MM-YYYY or YYYY-MM-DD). Defaults to today.
 
-- `-WTD DD-MM-YYYY`  
-  Fetch filings for the week-to-date (Monday to the given date, inclusive).
+- `--period [day|wtd|mtd|qtd]`
+  Fetch period:
+  - `day`: Single day (default).
+  - `wtd`: Week-to-date (Monday to reference date).
+  - `mtd`: Month-to-date (1st of month to reference date).
+  - `qtd`: Quarter-to-date (1st of quarter to reference date).
 
-- `-MTD DD-MM-YYYY`  
-  Fetch filings for the month-to-date (first day of the month to the given date, inclusive).
-
-- `-QTD DD-MM-YYYY`  
-  Fetch filings for the quarter-to-date (first day of the quarter to the given date, inclusive).
-
-If no option is given, the script defaults to the given date only.
+- `--lookback-years INTEGER`
+  Number of years to look back for history. Defaults to 15.
 
 ### Examples
 
-- Filings for a single day:
+- Filings for a single day (07-06-2024):
   ```bash
-  python FirstFilingsBSE.py -D 07-06-2024
+  first-filings --date 07-06-2024
   ```
 
 - Filings for week-to-date ending 07-06-2024:
   ```bash
-  python FirstFilingsBSE.py -WTD 07-06-2024
+  first-filings --date 07-06-2024 --period wtd
   ```
 
 - Filings for month-to-date ending 07-06-2024:
   ```bash
-  python FirstFilingsBSE.py -MTD 07-06-2024
+  first-filings --date 07-06-2024 --period mtd
   ```
 
 - Filings for quarter-to-date ending 07-06-2024:
   ```bash
-  python FirstFilingsBSE.py -QTD 07-06-2024
+  first-filings --date 07-06-2024 --period qtd
   ```
 
 - Specify lookback period (in years):
   ```bash
-  python FirstFilingsBSE.py -WTD 07-06-2024 10
+  first-filings --date 07-06-2024 --lookback-years 10
   ```
 
-- Sample input
-```bash
-  python FirstFilingsBSE.py -D 29-05-2025 5
+### Output
+
+The output is provided as a structured JSON object printed to stdout.
+Silent execution is enforced; all logs are written to `first_filings.log`.
+The result is also appended to `first_filings_archive.json`.
+
+Example Output:
+```json
+{
+  "status": "success",
+  "reference_date": "2024-06-07",
+  "period": "day",
+  "lookback_years": 15,
+  "filings": {
+    "Press Release": ["Company A", "Company B"],
+    "PPT": []
+  },
+  "errors": []
+}
 ```
 
-- Sample Final Output:
-```bash
-************************************************************
-First filings in the last 5 years as on 2025-05-29:
-  Press Release        : Network People Services Technologies Ltd
-  Press Release        : Denta Water and Infra Solutions Ltd
-************************************************************
-```
-  
 ## Requirements
 
-- Python 3.8+
-- Install dependencies:
-  ```
-  pip install -r requirements.txt
-  ```
-
-## Files
-
-- `FirstFilingsBSE.py` - Main script
+- Python 3.12+
+- `bse`
+- `click`
+- `tenacity`
 
 ## License
 
