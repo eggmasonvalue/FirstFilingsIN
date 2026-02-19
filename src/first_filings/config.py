@@ -1,9 +1,9 @@
 # src/first_filings/config.py
 
 # Retry configuration
-TOTAL_RETRIES = 15
+TOTAL_RETRIES = 60
 RETRY_MIN_DELAY = 1  # Minimum delay in seconds
-RETRY_MAX_DELAY = 60  # Maximum delay in seconds
+RETRY_MAX_DELAY = 600  # Maximum delay in seconds
 RETRY_MULTIPLIER = 2  # Multiplier for exponential backoff
 
 # Filing categories
