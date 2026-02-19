@@ -11,8 +11,9 @@ graph TD
     Client -->|Fetch Data| BSE[BSE Library / API]
     Core -->|Check History| Client
     Client -->|Fetch Historic Data| BSE
-    CLI -->|Archive Result| Utils
-    CLI -->|Print JSON| Console[Console Output]
+    Core -->|Enrich Data| YF[YFinance]
+    CLI -->|Save Output| Utils
+    CLI -->|Print Summary| Console[Console Output]
 ```
 
 ## Modules
@@ -27,6 +28,7 @@ Contains the business logic.
 - **`FirstFilingAnalyzer`**: Class to analyze filings.
     - **`fetch_announcements`**: Fetches and filters announcements for a date range.
     - **`is_first_filing`**: Checks if a filing is unique in the lookback window.
+    - **`enrich_filing_data`**: Fetches additional market data (Price, MktCap) using `yfinance` and `bse` lookup.
     - **`_filter_announcements`**: Internal helper to filter by keywords.
 
 ### `src/first_filings/bse_client.py`
@@ -42,8 +44,8 @@ Configuration constants.
 ### `src/first_filings/utils.py`
 Utility functions.
 - **`setup_logging`**: Configures logging to file.
-- **`print_json_output`**: Prints structured JSON to stdout.
-- **`archive_output`**: Appends result to archive file.
+- **`save_output`**: Saves the rich JSON output to disk (`first_filings_output.json`).
+- **`print_cli_json`**: Prints minimal summary JSON to stdout.
 
 ## Data Flow
 1.  **Input**: Date, Period, Lookback period.
@@ -51,5 +53,7 @@ Utility functions.
     -   Calculate date range.
     -   Fetch all announcements for the target range (with retries).
     -   For each announcement, query historical data (lookback period) to see if a similar announcement exists.
-3.  **Output**: Structured JSON object with list of companies with their "First Filing".
-4.  **Archive**: Result is appended to `first_filings_archive.json`.
+    -   If a "first filing" is confirmed, enrich it with Symbol, Price, and Market Cap data.
+3.  **Output**:
+    -   Detailed data saved to `first_filings_output.json`.
+    -   Minimal summary printed to stdout.

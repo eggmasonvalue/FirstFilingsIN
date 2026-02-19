@@ -20,44 +20,71 @@ def setup_logging(log_file=config.LOG_FILE):
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
 
-    # Redirect stdout and stderr to logging if needed,
-    # but cleaner is to just use logging everywhere and avoid print().
-    # However, if libraries use print, we might want to capture it.
-    # For now, we will rely on using logging module.
-
-def archive_output(output_data, archive_file=config.ARCHIVE_FILE):
+def save_output(filings_data, failed_checks_count, filename="first_filings_output.json"):
     """
-    Append the output data to the archive file.
+    Save the rich, structured output JSON to disk.
+
+    Structure:
+    Category -> Date -> List of Filings
     """
-    archive_data = []
-    if os.path.exists(archive_file):
-        try:
-            with open(archive_file, 'r') as f:
-                content = f.read()
-                if content:
-                    archive_data = json.loads(content)
-                    if not isinstance(archive_data, list):
-                        archive_data = [archive_data]
-        except json.JSONDecodeError:
-            logging.error(f"Failed to decode archive file {archive_file}. Starting new archive.")
-        except Exception as e:
-            logging.error(f"Error reading archive file: {e}")
 
-    # Add timestamp to the record if not present
-    if isinstance(output_data, dict) and "archived_at" not in output_data:
-        output_data["archived_at"] = datetime.now().isoformat()
+    # 1. Transform flat filings list to nested structure
+    # Input filings_data structure: { "Category": [ {filing_dict}, ... ], ... }
 
-    archive_data.append(output_data)
+    nested_data = {}
+
+    for category, filings_list in filings_data.items():
+        if category not in nested_data:
+            nested_data[category] = {}
+
+        for filing in filings_list:
+            # Filing is a dict returned by enrich_filing_data
+            if not filing:
+                continue
+
+            date_str = filing['date'] # ISO string YYYY-MM-DD
+
+            if date_str not in nested_data[category]:
+                nested_data[category][date_str] = []
+
+            # Create the optimized array: [scrip, name, price, cur_price, mkt_cap]
+            row = [
+                filing['scrip_code'],
+                filing['company_name'],
+                filing['price_at_announcement'],
+                filing['current_price'],
+                filing['current_mkt_cap_cr']
+            ]
+
+            nested_data[category][date_str].append(row)
+
+    output = {
+        "meta": {
+            "generated_at": datetime.now().isoformat(),
+            "columns": ["scrip_code", "company_name", "price_announcement", "current_price", "current_mkt_cap_cr"],
+            "failed_checks_count": failed_checks_count
+        },
+        "data": nested_data
+    }
 
     try:
-        with open(archive_file, 'w') as f:
-            json.dump(archive_data, f, indent=2)
-        logging.info(f"Output archived to {archive_file}")
+        with open(filename, 'w') as f:
+            json.dump(output, f, indent=2)
+        logging.info(f"Detailed output saved to {filename}")
+        return filename
     except Exception as e:
-        logging.error(f"Failed to write to archive file: {e}")
+        logging.error(f"Failed to save output file: {e}")
+        return None
 
-def print_json_output(data):
+def print_cli_json(output_file, total_filings, failed_checks_count):
     """
-    Print the data as JSON to stdout.
+    Print the minimal CLI JSON summary.
     """
-    print(json.dumps(data, indent=2))
+    summary = {
+        "status": "success",
+        "generated_at": datetime.now().isoformat(),
+        "total_filings_found": total_filings,
+        "failed_checks_count": failed_checks_count,
+        "output_file": output_file
+    }
+    print(json.dumps(summary, indent=2))

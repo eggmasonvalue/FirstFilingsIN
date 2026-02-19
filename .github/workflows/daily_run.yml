@@ -23,3 +23,10 @@ jobs:
 
       - name: Run first-filings
         run: uv run first-filings
+
+      - name: Upload Output JSON
+        uses: actions/upload-artifact@v4
+        with:
+          name: first-filings-output
+          path: first_filings_output.json
+          retention-days: 1

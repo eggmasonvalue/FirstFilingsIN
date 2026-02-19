@@ -6,12 +6,13 @@
 ## Core Features
 1.  **Announcement Fetching**: Scrapes/fetches announcements from BSE for specified categories.
 2.  **First Filing Detection**: Checks if a specific filing type is the first one in a configurable lookback period (default 15 years).
-3.  **Filering**: Filters by subcategories like "Analyst / Investor Meet", "Press Release", "Investor Presentation".
+3.  **Data Enrichment**: Adds Symbol, Historical Price, and Current Market Cap (in Crores) using `yfinance`.
 4.  **CLI Interface**: Standardized CLI with options for date, period, and lookback years.
-5.  **Output**: Structured JSON output, silent execution with file logging, and archival of results.
+5.  **Output**: Detailed JSON saved to disk, minimal summary printed to stdout.
 
 ## Technology Stack
 -   **Python**: Core logic (3.12+).
 -   **click**: Command Line Interface.
 -   **tenacity**: Retry logic with exponential backoff.
 -   **bse**: Third-party library for interacting with BSE data.
+-   **yfinance**: For fetching market data (Price, Market Cap).

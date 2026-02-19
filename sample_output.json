@@ -1,0 +1,44 @@
+{
+  "meta": {
+    "generated_at": "2024-06-18T10:30:00.123456",
+    "columns": [
+      "scrip_code",
+      "company_name",
+      "price_at_announcement",
+      "current_price",
+      "current_mkt_cap_cr"
+    ],
+    "failed_checks_count": 0
+  },
+  "data": {
+    "Analyst Call Intimation": {
+      "2024-06-07": [
+        [
+          "500325",
+          "Reliance Industries Ltd",
+          2950.5,
+          2980.0,
+          1950000
+        ],
+        [
+          "532540",
+          "TCS Ltd",
+          3800.0,
+          3850.0,
+          1400000
+        ]
+      ]
+    },
+    "Press Release": {
+      "2024-06-07": [
+        [
+          "500180",
+          "HDFC Bank Ltd",
+          1550.0,
+          1560.0,
+          1100000
+        ]
+      ]
+    }
+  }
+}
