@@ -56,48 +56,42 @@ uv run first-filings [OPTIONS]
 
 *Note: If no category flags (`-a`, `-p`, `-t`) are provided, ALL categories are fetched by default.*
 
-### Examples
-
-- Filings for a single day (07-06-2024), default lookback (2 years):
-  ```bash
-  uv run first-filings --date 07-06-2024
-  ```
-
-- Fetch only **Analyst Calls** for week-to-date ending 07-06-2024:
-  ```bash
-  uv run first-filings --date 07-06-2024 --period wtd -a
-  ```
-
-- Fetch **Press Releases** and **Presentations** for month-to-date:
-  ```bash
-  uv run first-filings --date 07-06-2024 --period mtd -p -t
-  ```
-
-- Specify lookback period (e.g., 10 years):
-  ```bash
-  uv run first-filings --date 07-06-2024 --lookback-years 10
-  ```
-
 ### Output
 
-The output is provided as a structured JSON object printed to stdout.
-Silent execution is enforced; all logs are written to `first_filings.log`.
-The result is also appended to `first_filings_archive.json`.
+The CLI prints a minimal JSON summary to `stdout` containing the path to the full output file.
 
-Example Output:
+**CLI Output Example:**
 ```json
 {
   "status": "success",
-  "reference_date": "2024-06-07",
-  "period": "day",
-  "lookback_years": 2,
-  "categories_checked": ["Analyst Call Intimation"],
-  "filings": {
-    "Analyst Call Intimation": ["Company A"]
-  },
-  "errors": []
+  "generated_at": "2024-06-18T10:30:00",
+  "total_filings_found": 12,
+  "failed_checks_count": 0,
+  "output_file": "first_filings_output.json"
 }
 ```
+
+**Full Output File (`first_filings_output.json`):**
+The detailed data is saved to a JSON file structured by Category -> Date. This format is optimized for size and structure.
+
+```json
+{
+  "meta": {
+    "generated_at": "...",
+    "columns": ["scrip_code", "company_name", "price_announcement", "current_price", "current_mkt_cap_cr"],
+    "failed_checks_count": 0
+  },
+  "data": {
+    "Analyst Call Intimation": {
+      "2024-06-07": [
+        ["500325", "Reliance Industries Ltd", 2950.50, 2980.00, 1950000],
+        ...
+      ]
+    }
+  }
+}
+```
+*Note: Market Cap is in Crores.*
 
 ## Requirements
 
@@ -105,6 +99,7 @@ Example Output:
 - `bse`
 - `click`
 - `tenacity`
+- `yfinance`
 
 ## License
 
