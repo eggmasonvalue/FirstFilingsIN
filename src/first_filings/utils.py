@@ -20,7 +20,7 @@ def setup_logging(log_file=config.LOG_FILE):
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
 
-def save_output(filings_data, failed_checks_count, filename="first_filings_output.json"):
+def save_output(filings_data, failed_checks_count, lookback_years, filename="first_filings_output.json"):
     """
     Save the rich, structured output JSON to disk.
 
@@ -62,7 +62,8 @@ def save_output(filings_data, failed_checks_count, filename="first_filings_outpu
         "meta": {
             "generated_at": datetime.now().isoformat(),
             "columns": ["scrip_code", "company_name", "price_announcement", "current_price", "current_mkt_cap_cr"],
-            "failed_checks_count": failed_checks_count
+            "failed_checks_count": failed_checks_count,
+            "lookback_years": lookback_years
         },
         "data": nested_data
     }

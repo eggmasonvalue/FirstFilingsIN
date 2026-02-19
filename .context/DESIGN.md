@@ -1,21 +1,48 @@
-# Design & Features
+# System Design: First Filings
 
-## Implemented Features
-- [x] **Date Range Parsing**: Supports `day`, `wtd`, `mtd`, `qtd`.
-- [x] **Category Filtering**: Monitors "Analyst Call Intimation", "Press Release", and "PPT".
-- [x] **First Filing Logic**: Verifies uniqueness against a historical lookback window (default 15 years).
-- [x] **Data Enrichment**: Adds Symbol, Historical Price, Current Price, and Market Cap (in Crores).
-- [x] **Retry Logic**: Handles network flakes with **exponential backoff** and 15 retries (using `tenacity`).
-- [x] **Logging**: Silent execution with file logging (`first_filings.log`).
-- [x] **Output**:
-  -   Detailed JSON saved to disk (`first_filings_output.json`).
-  -   Minimal JSON summary printed to stdout.
-- [x] **Modularization**: Split into `cli`, `core`, `bse_client`, `config`, `utils`.
+## Architecture
 
-## Pending / Planned
-- [ ] **Notifications**: Email alerts (via GitHub Actions).
-- [ ] **CI/CD**: Automated testing and deployment pipeline.
+The system follows a modular architecture to support multiple exchanges.
 
-## Known Issues
--   **Rate Limiting**: Aggressive scraping might trigger BSE rate limits.
--   **Data Gaps**: `yfinance` might not have data for all BSE scrips.
+### Components
+
+1.  **CLI (`cli.py`)**:
+    - Entry point.
+    - Parses arguments (`--exchange`, `--period`, etc.).
+    - Instantiates specific `ExchangeClient`.
+    - Drivers the analysis loop.
+    - Handles output file generation.
+
+2.  **Exchange Client (`exchange.py`, `bse_client.py`, `nse_client.py`)**:
+    - `ExchangeClient`: Abstract Base Class defining the contract (`fetch_announcements`, `get_enrichment_info`).
+    - `BSEClient`: Implements interaction with BSE. Uses `bse` library. Handles pagination and category mapping.
+    - `NSEClient`: Implements interaction with NSE (Main/SME). Uses `nse` local library. Handles keyword-based filtering.
+    - `Announcement`: Standardized data model for announcements across exchanges.
+
+3.  **Analyzer (`core.py`)**:
+    - `FirstFilingAnalyzer`: Contains the business logic.
+    - `fetch_announcements`: Delegates to the injected `ExchangeClient`.
+    - `is_first_filing`: Checks history via `ExchangeClient` to determine uniqueness.
+    - `enrich_filing_data`: Enriches valid findings with market data (Symbol resolution, Prices) using `yfinance`.
+
+4.  **Utilities (`utils.py`, `config.py`)**:
+    - Logging setup.
+    - Configuration constants (Keywords, Categories).
+    - Output formatting (JSON structure).
+
+## Data Flow
+
+1.  CLI initializes `ExchangeClient` based on user input (e.g., `NSEClient(segment="sme")`).
+2.  Analyzer fetches announcements for the requested period for selected categories.
+3.  For each announcement:
+    - Checks history (Lookback period).
+    - If it's a "First Filing":
+        - Resolves Symbol/Suffix via `ExchangeClient`.
+        - Fetches Market Data via `yfinance`.
+        - Adds to results.
+4.  Results are saved to JSON.
+
+## Extensibility
+
+- **New Exchange**: To add a new exchange, implement `ExchangeClient` and update `cli.py` factories.
+- **New Category**: Add to `config.py` and ensure mapping keywords exist.

@@ -1,18 +1,25 @@
-# Project Overview
+# Project Overview: First Filings
 
-## Purpose
-`FirstFilings` is a tool designed to identify and alert on the "first filing" of specific types (like Analyst Calls, Press Releases, Presentations) for companies listed on the BSE (Bombay Stock Exchange). It helps investors spot new developments that might indicate a change in company communication or strategy.
+The **First Filings** project identifies the first time a company makes a specific type of announcement (e.g., Analyst Call, Press Release, Presentation) within a lookback period. This helps investors spot companies that are starting to communicate more actively with the market, which can be a signal of change.
 
 ## Core Features
-1.  **Announcement Fetching**: Scrapes/fetches announcements from BSE for specified categories.
-2.  **First Filing Detection**: Checks if a specific filing type is the first one in a configurable lookback period (default 15 years).
-3.  **Data Enrichment**: Adds Symbol, Historical Price, and Current Market Cap (in Crores) using `yfinance`.
-4.  **CLI Interface**: Standardized CLI with options for date, period, and lookback years.
-5.  **Output**: Detailed JSON saved to disk, minimal summary printed to stdout.
+
+- **Multi-Exchange Support**:
+    - **BSE (Bombay Stock Exchange)**: Fetches announcements using `bse` library.
+    - **NSE (National Stock Exchange)**: Fetches Mainboard ("equities") and SME ("sme") announcements using `nse` library.
+- **Announcement Filtering**:
+    - Supports specific categories: Analyst Call Intimations, Press Releases, Investor Presentations.
+    - Uses efficient keyword filtering (e.g., "Analyst", "Presentation").
+- **First Filing Detection**:
+    - Checks history (default 2 years) to see if an announcement type is the first of its kind for a company.
+- **Data Enrichment**:
+    - Enriches findings with Market Cap, Current Price, and Price at Announcement using `yfinance`.
+- **Output**:
+    - Generates separate JSON files for each exchange (e.g., `bse_output.json`, `nse_sme_output.json`).
 
 ## Technology Stack
--   **Python**: Core logic (3.12+).
--   **click**: Command Line Interface.
--   **tenacity**: Retry logic with exponential backoff.
--   **bse**: Third-party library for interacting with BSE data.
--   **yfinance**: For fetching market data (Price, Market Cap).
+
+- **Python 3.12+**
+- **Libraries**: `click`, `yfinance`, `tenacity`.
+- **Exchange libs**: `bse` (PyPI), `nse` (Local/PyPI).
+- **Package Management**: `uv`.

@@ -8,4 +8,5 @@ build/
 .pytest_cache/
 .ruff_cache/
 first_filings.log
-first_filings_output.json
+*_output.json
+*.pkl

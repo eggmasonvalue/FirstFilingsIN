@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2024-06-18T10:30:00.123456",
+    "generated_at": "2026-02-19T10:30:00.123456",
     "columns": [
       "scrip_code",
       "company_name",
@@ -8,35 +8,29 @@
       "current_price",
       "current_mkt_cap_cr"
     ],
-    "failed_checks_count": 0
+    "failed_checks_count": 0,
+    "lookback_years": 2
   },
   "data": {
     "Analyst Call Intimation": {
-      "2024-06-07": [
+      "2026-02-19": [
         [
-          "500325",
-          "Reliance Industries Ltd",
-          2950.5,
-          2980.0,
-          1950000
-        ],
-        [
-          "532540",
-          "TCS Ltd",
-          3800.0,
-          3850.0,
-          1400000
+          "ZAGGLE",
+          "Zaggle Prepaid Ocean Services Limited",
+          420.5,
+          425.0,
+          5200
         ]
       ]
     },
     "Press Release": {
-      "2024-06-07": [
+      "2026-02-19": [
         [
-          "500180",
-          "HDFC Bank Ltd",
-          1550.0,
-          1560.0,
-          1100000
+          "RELIANCE",
+          "Reliance Industries Limited",
+          2950.0,
+          2960.0,
+          1950000
         ]
       ]
     }

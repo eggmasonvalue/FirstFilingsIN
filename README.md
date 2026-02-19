@@ -1,106 +1,89 @@
-# FirstFilings
-A script to fetch and analyze BSE corporate announcements, identifying first-time filings for each company in a given subcategory in the given lookback period.
+# First Filings Finder
+
+This tool fetches corporate announcements from BSE and NSE (Mainboard & SME) to identify "first filings" of specific types (e.g., Analyst Call Intimations, Press Releases, Investor Presentations) within a specified lookback period.
 
 ## Value Proposition
 The first investor presentation, analyst or earnings call intimation or media release often signifies the start of the market's discovery of the company or the promoter's interest in value creation via market capitalisation increase, often leading to rapid rerating.
+
+### Note:
+This repo has been designed putting AI agents first. So, expect token-efficient CLI output with progressive disclosure, silent execution on the terminal, graceful exits with status information provided in the CLI return. If you're a human, use the log to be informed of progress.
+
+AI agent skill coming soon to help agents understand the tool better. If you're a human, the recommended approach is to ask the agent to use the tool and generate a dashboard tailored to YOU. All frontend is bloat in the LLM era. Inference-time frontend FTW!
+
+## Features
+
+- **Multi-Exchange Support**: BSE(SME and Mainboard), NSE Mainboard, NSE SME.
+- **First Filing Detection**: Checks if a company has made a specific type of announcement in the past `N` years.
+- **Enrichment**: Adds Current Market Cap, Current Price, and Price at Announcement (using `yfinance`).
+- **Flexible Filtering**: Filter by Date Range (Day, WTD, MTD, QTD) and Categories.
+- **Output**: JSON file with structured data.
 
 ## Installation
 
 This project uses `uv` for dependency management.
 
-1. Install `uv` if not already installed (see [uv docs](https://github.com/astral-sh/uv)).
-
-2. Sync dependencies:
-   ```bash
-   uv sync
-   ```
-
-3. Install the package (optional but recommended):
-   ```bash
-   uv pip install -e .
-   ```
+```bash
+# Install dependencies
+uv sync
+```
 
 ## Usage
 
-### Command Line Interface
+Run the tool using `uv run first-filings`.
 
-Run the tool using `uv run`:
+### Basic Command
 
 ```bash
-uv run first-filings [OPTIONS]
+# Fetch BSE announcements for today (default)
+uv run first-filings
+
+# Fetch NSE Mainboard announcements for today
+uv run first-filings --exchange nse-main
+
+# Fetch NSE SME announcements
+uv run first-filings --exchange nse-sme
 ```
 
 ### Options
 
-- `--date DATE`
-  Reference date (DD-MM-YYYY or YYYY-MM-DD). Defaults to today.
+- `--exchange`: `bse` (default), `nse-main`, `nse-sme`.
+- `--period`: `day` (default), `wtd`, `mtd`, `qtd`.
+- `--date`: Reference date (DD-MM-YYYY). Defaults to today.
+- `--lookback-years`: Number of years to check history (default: 2).
+- `-a` / `--analyst-calls`: Fetch Analyst Call Intimations.
+- `-p` / `--press-releases`: Fetch Press Releases.
+- `-t` / `--presentations`: Fetch Investor Presentations.
 
-- `--period [day|wtd|mtd|qtd]`
-  Fetch period:
-  - `day`: Single day (default).
-  - `wtd`: Week-to-date (Monday to reference date).
-  - `mtd`: Month-to-date (1st of month to reference date).
-  - `qtd`: Quarter-to-date (1st of quarter to reference date).
+### Examples
 
-- `--lookback-years INTEGER`
-  Number of years to look back for history. Defaults to 2 (configurable).
+```bash
+# Check for first Analyst Calls on NSE Mainboard for the current month
+uv run first-filings --exchange nse-main --period mtd --analyst-calls
 
-- `-a, --analyst-calls`
-  Fetch Analyst Call Intimations only.
-
-- `-p, --press-releases`
-  Fetch Press Releases only.
-
-- `-t, --presentations`
-  Fetch Investor Presentations (PPT) only.
-
-*Note: If no category flags (`-a`, `-p`, `-t`) are provided, ALL categories are fetched by default.*
-
-### Output
-
-The CLI prints a minimal JSON summary to `stdout` containing the path to the full output file.
-
-**CLI Output Example:**
-```json
-{
-  "status": "success",
-  "generated_at": "2024-06-18T10:30:00",
-  "total_filings_found": 12,
-  "failed_checks_count": 0,
-  "output_file": "first_filings_output.json"
-}
+# Check for Press Releases on BSE with a 3-year lookback
+uv run first-filings --exchange bse --lookback-years 3 --press-releases
 ```
 
-**Full Output File (`first_filings_output.json`):**
-The detailed data is saved to a JSON file structured by Category -> Date. This format is optimized for size and structure.
+## Output
 
+The tool generates a JSON output file based on the exchange (e.g., `bse_output.json`, `nse_main_output.json`).
+
+**Structure:**
 ```json
 {
   "meta": {
     "generated_at": "...",
     "columns": ["scrip_code", "company_name", "price_announcement", "current_price", "current_mkt_cap_cr"],
-    "failed_checks_count": 0
+    "failed_checks_count": 0,
+    "lookback_years": 2
   },
   "data": {
     "Analyst Call Intimation": {
-      "2024-06-07": [
-        ["500325", "Reliance Industries Ltd", 2950.50, 2980.00, 1950000],
+      "YYYY-MM-DD": [
+        ["Symbol", "Company Name", Price, CurrentPrice, MktCap],
         ...
       ]
     }
   }
 }
 ```
-*Note: Market Cap is in Crores.*
-
-## Requirements
-
-- Python 3.12+
-- `bse`
-- `click`
-- `tenacity`
-- `yfinance`
-
-## License
-
-See [LICENSE](LICENSE).

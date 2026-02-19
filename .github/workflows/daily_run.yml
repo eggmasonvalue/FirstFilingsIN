@@ -21,12 +21,35 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras --dev
 
-      - name: Run first-filings
-        run: uv run first-filings
+      - name: Run first-filings BSE
+        run: uv run first-filings --exchange bse
 
-      - name: Upload Output JSON
+      - name: Upload Output JSON BSE
         uses: actions/upload-artifact@v4
         with:
-          name: first-filings-output
-          path: first_filings_output.json
+          name: bse-output
+          path: bse_output.json
+          retention-days: 1
+      
+      - name: Run first-filings NSE Main
+        run: uv run first-filings --exchange nse-main
+
+      - name: Upload Output JSON NSE Main
+        uses: actions/upload-artifact@v4
+        with:
+          name: nse-main-output
+          path: nse_main_output.json
+          retention-days: 1
+
+      - name: Wait for 30 minutes
+        run: sleep 1800
+
+      - name: Run first-filings NSE SME
+        run: uv run first-filings --exchange nse-sme
+
+      - name: Upload Output JSON NSE SME
+        uses: actions/upload-artifact@v4
+        with:
+          name: nse-sme-output
+          path: nse_sme_output.json
           retention-days: 1

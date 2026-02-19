@@ -22,6 +22,12 @@ FILING_SUBCATEGORY_GENERAL_KEYWORD = {
     "PPT": "Presentation"
 }
 
+NSE_CATEGORY_KEYWORDS = {
+    "Analyst Call Intimation": ["Analyst", "Institutional Investor", "Meet", "Con. Call"],
+    "Press Release": ["Press Release", "Media Release"],
+    "Presentation": ["Presentation", "Investor Presentation"]
+}
+
 # CLI Flags mapping
 # Flag: Key in FILING_SUBCATEGORY
 CLI_FLAGS = {

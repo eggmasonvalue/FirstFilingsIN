@@ -2,6 +2,8 @@ import logging
 from tenacity import retry, wait_random_exponential, stop_after_attempt, retry_if_exception, before_sleep_log
 from bse import BSE
 from . import config
+from .exchange import ExchangeClient, Announcement
+
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +39,7 @@ def should_retry(exception):
     return True
 
 
-class BSEClient:
+class BSEClient(ExchangeClient):
     def __init__(self):
         self.bse = BSE(download_folder=".")
 
@@ -97,3 +99,94 @@ class BSEClient:
                 raise e # Re-raise to trigger retry
 
         return all_ann
+
+    def fetch_announcements(self, from_date, to_date, category, subcategory=None, scrip_code=None) -> list[Announcement]:
+        """
+        Fetch announcements and map to standardized Announcement objects.
+        If category is a label (e.g. "Analyst Call Intimation"), fetch all corresponding BSE subcategories.
+        """
+        all_announcements = []
+        
+        # Determine subcategories to fetch
+        subcats_to_fetch = []
+        if subcategory:
+            subcats_to_fetch.append(subcategory)
+        elif category in config.FILING_SUBCATEGORY:
+            subcats_to_fetch = config.FILING_SUBCATEGORY[category]
+        else:
+            # Maybe it's a direct category or we don't know mapping?
+            # For BSE client, we usually rely on config. 
+            # If not found, log warning? Or assume it's a direct subcategory string?
+            # Existing logic suggests category is the broad type (e.g. "Corp") and subcategory is specific.
+            # But here 'category' arg is mapped to 'subcat_label'.
+            logger.warning(f"Category label '{category}' not found in BSE config. Skipping.")
+            return []
+
+        for subcat in subcats_to_fetch:
+            try:
+                # Note: BSE.announcements takes 'category' as the broad BSE category (e.g. 'Corp. Action')
+                # and 'subcategory' as the specific type.
+                # In config.py: FILING_CATEGORY = "Corp. Action"
+                # So we use config.FILING_CATEGORY for the 'category' arg of BSE.announcements
+                
+                raw_announcements = self.fetch_paginated_announcements(
+                    from_date=from_date,
+                    to_date=to_date,
+                    category=config.FILING_CATEGORY, 
+                    subcategory=subcat,
+                    scripcode=scrip_code
+                )
+                
+                # Filter if needed (e.g. valid checks or keywords)
+                if (
+                    subcat == config.SUBCATEGORY_GENERAL
+                    and category in config.FILING_SUBCATEGORY_GENERAL_KEYWORD
+                ):
+                    keyword = config.FILING_SUBCATEGORY_GENERAL_KEYWORD[category]
+                    filtered_raw = []
+                    for filing in raw_announcements:
+                         newssub = filing.get("NEWSSUB") or ""
+                         headline = filing.get("HEADLINE") or ""
+                         if (keyword.lower() in newssub.lower()) or (keyword.lower() in headline.lower()):
+                             filtered_raw.append(filing)
+                    raw_announcements = filtered_raw
+
+                for ann in raw_announcements:
+                    try:
+                        dt_str = ann.get("DT_TM")
+                        if dt_str:
+                            try:
+                                dt = datetime.fromisoformat(dt_str)
+                            except ValueError:
+                                dt = datetime.now()
+                        else:
+                            dt = datetime.now()
+
+                        all_announcements.append(Announcement(
+                            scrip_code=str(ann.get("SCRIP_CD")),
+                            company_name=ann.get("SLONGNAME", ""),
+                            date=dt,
+                            category=category, # Use the high-level label
+                            description=ann.get("NEWSSUB") or ann.get("HEADLINE") or "",
+                            attachment_url=ann.get("ATTACHMENTNAME")
+                        ))
+                    except Exception as e:
+                        logger.error(f"Error parsing announcement: {e}")
+                        continue
+            except Exception as e:
+                logger.error(f"Error fetching BSE subcategory {subcat}: {e}")
+                continue
+                
+        return all_announcements
+
+    def get_enrichment_info(self, scrip_code: str):
+        lookup_result = self.bse.lookup(str(scrip_code))
+        symbol = None
+        company_name = None
+        
+        if lookup_result:
+            symbol = lookup_result.get("symbol")
+            company_name = lookup_result.get("company_name")
+            
+        return symbol, company_name, ".BO"
+

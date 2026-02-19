@@ -1,14 +1,15 @@
 # Changelog
 
-## [2.0.0] - 2026-05-29
+## [2.0.0] - 2026-02-19
 
 ### Added
--   Refactored CLI using `click` with structured JSON output.
--   Modularized codebase into `src/first_filings/` package.
--   Implemented exponential backoff with 15 retries using `tenacity`.
--   Silent execution with file logging (`first_filings.log`).
--   Results archival to `first_filings_archive.json`.
--   Updated `README.md` and documentation.
+-   **Multi-Exchange Support**: Added support for NSE Mainboard and NSE SME via `--exchange` flag.
+-   **Modular Architecture**: Introduced `ExchangeClient` interface for extensibility.
+-   **Enrichment**: Added lookback years to output metadata and refined enrichment logic.
+-   **Output**: Standardized JSON output structure across exchanges with separate files.
+-   **Usage**: Updated `README.md` with comprehensive usage examples.
+
+
 
 ## [1.0.0] - 2026-01-26
 
