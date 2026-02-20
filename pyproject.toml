@@ -21,3 +21,7 @@ dev = [
 
 [project.scripts]
 first-filings = "first_filings.cli:main"
+
+
+[tool.uv]
+package = true
