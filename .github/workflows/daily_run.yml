@@ -4,6 +4,16 @@ on:
   schedule:
     - cron: '30 21 * * *'
   workflow_dispatch:
+    inputs:
+      date:
+        description: 'Date (DD-MM-YYYY or YYYY-MM-DD)'
+        required: false
+        type: string
+      skip_wait:
+        description: 'Skip 30 min wait?'
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   run-daily:
@@ -22,7 +32,12 @@ jobs:
         run: uv sync --all-extras --dev
 
       - name: Run first-filings BSE
-        run: uv run first-filings --exchange bse
+        run: |
+          ARGS="--exchange bse"
+          if [ -n "${{ inputs.date }}" ]; then
+            ARGS="$ARGS --date ${{ inputs.date }}"
+          fi
+          uv run first-filings $ARGS
 
       - name: Upload Output JSON BSE
         uses: actions/upload-artifact@v4
@@ -38,7 +53,12 @@ jobs:
         continue-on-error: true
 
       - name: Run first-filings NSE Main
-        run: uv run first-filings --exchange nse-main
+        run: |
+          ARGS="--exchange nse-main"
+          if [ -n "${{ inputs.date }}" ]; then
+            ARGS="$ARGS --date ${{ inputs.date }}"
+          fi
+          uv run first-filings $ARGS
 
       - name: Upload Output JSON NSE Main
         uses: actions/upload-artifact@v4
@@ -54,10 +74,16 @@ jobs:
         continue-on-error: true
 
       - name: Wait for 30 minutes
+        if: ${{ github.event_name == 'schedule' || inputs.skip_wait != 'true' }}
         run: sleep 1800
 
       - name: Run first-filings NSE SME
-        run: uv run first-filings --exchange nse-sme
+        run: |
+          ARGS="--exchange nse-sme"
+          if [ -n "${{ inputs.date }}" ]; then
+            ARGS="$ARGS --date ${{ inputs.date }}"
+          fi
+          uv run first-filings $ARGS
 
       - name: Upload Output JSON NSE SME
         uses: actions/upload-artifact@v4
