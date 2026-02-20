@@ -45,7 +45,6 @@ class NSEClient(ExchangeClient):
             
             for item in raw_data:
                 desc = item.get("desc", "")
-                subject = item.get("attchmntText", "") # Sometimes context is here too? 
                 # User said "desc" field. Let's stick to "desc" primarily, maybe check subject if needed.
                 # Plan said "desc" field.
                 
@@ -68,7 +67,7 @@ class NSEClient(ExchangeClient):
                                  # Try "sort_date": "2026-02-19 21:31:28"
                                  dt_str_sort = item.get("sort_date")
                                  dt = datetime.strptime(dt_str_sort, "%Y-%m-%d %H:%M:%S")
-                             except:
+                             except Exception:
                                 dt = datetime.now()
                     else:
                         dt = datetime.now()

@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.0] - 2026-02-19
+
+### Changed
+-   **Code Optimization**: Refactored `core.py` to remove duplicate code and legacy implementations, ensuring clean architecture using `ExchangeClient`.
+-   **Quality Assurance**: Fixed critical bugs (missing imports, bare excepts) identified by linting.
+-   **Testing**: Updated `test_basic.py` to test the clean `FirstFilingAnalyzer` using mocks, achieving full test coverage for core logic.
+-   **Tooling**: Added `scripts/check.sh` for easy verification of linting and tests.
+
 ## [2.0.0] - 2026-02-19
 
 ### Added
