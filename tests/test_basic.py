@@ -1,41 +1,109 @@
 import unittest
 from unittest.mock import MagicMock
 from datetime import datetime
-from src.first_filings.core import FirstFilingAnalyzer
-from src.first_filings import config
+from first_filings.core import FirstFilingAnalyzer
+from first_filings.exchange import Announcement
 
 class TestFirstFilingAnalyzer(unittest.TestCase):
     def test_fetch_announcements(self):
-        mock_bse = MagicMock()
-        # Mock fetch_paginated_announcements return value
-        mock_bse.fetch_paginated_announcements.return_value = [
-            {"NEWSSUB": "Investor Presentation", "HEADLINE": "Test Headline", "SCRIP_CD": "12345"}
-        ]
+        mock_client = MagicMock()
+        # Mock fetch_announcements return value
+        mock_announcement = Announcement(
+            scrip_code="12345",
+            company_name="Test Corp",
+            date=datetime.now(),
+            category="PPT",
+            description="Investor Presentation"
+        )
+        mock_client.fetch_announcements.return_value = [mock_announcement]
 
-        analyzer = FirstFilingAnalyzer(mock_bse)
+        analyzer = FirstFilingAnalyzer(mock_client)
         from_date = datetime.now()
         to_date = datetime.now()
 
-        results = analyzer.fetch_announcements(from_date, to_date)
+        # Test specific category
+        results = analyzer.fetch_announcements(from_date, to_date, categories=["PPT"])
 
-        # Check if results contain data
         self.assertTrue(results)
         self.assertIn("PPT", results)
+        self.assertEqual(len(results["PPT"]), 1)
+        self.assertEqual(results["PPT"][0], mock_announcement)
 
-    def test_filter_keywords(self):
-        mock_bse = MagicMock()
-        analyzer = FirstFilingAnalyzer(mock_bse)
+        # Verify client was called correctly
+        mock_client.fetch_announcements.assert_called_with(
+            from_date=from_date,
+            to_date=to_date,
+            category="PPT"
+        )
 
-        # Test General category with keyword "Presentation"
-        announcements = [
-            {"NEWSSUB": "This is a Presentation", "HEADLINE": "Test"},
-            {"NEWSSUB": "Just a notice", "HEADLINE": "Notice"},
-        ]
+    def test_is_first_filing_true(self):
+        mock_client = MagicMock()
+        analyzer = FirstFilingAnalyzer(mock_client)
 
-        # subcat_label="PPT", subcat_value="General"
-        filtered = analyzer._filter_announcements(announcements, "PPT", config.SUBCATEGORY_GENERAL)
-        self.assertEqual(len(filtered), 1)
-        self.assertEqual(filtered[0]["NEWSSUB"], "This is a Presentation")
+        # Scenario: Only 1 filing found in history (the current one)
+        mock_client.fetch_announcements.return_value = [MagicMock()]
+
+        result = analyzer.is_first_filing(
+            scrip_code="12345",
+            category_label="PPT",
+            filing_date=datetime.now(),
+            lookback_years=2,
+            company_name="Test Corp"
+        )
+
+        self.assertTrue(result)
+
+    def test_is_first_filing_false(self):
+        mock_client = MagicMock()
+        analyzer = FirstFilingAnalyzer(mock_client)
+
+        # Scenario: 2 filings found (current one + previous one)
+        mock_client.fetch_announcements.return_value = [MagicMock(), MagicMock()]
+
+        result = analyzer.is_first_filing(
+            scrip_code="12345",
+            category_label="PPT",
+            filing_date=datetime.now(),
+            lookback_years=2,
+            company_name="Test Corp"
+        )
+
+        self.assertFalse(result)
+
+    def test_enrich_filing_data(self):
+        mock_client = MagicMock()
+        analyzer = FirstFilingAnalyzer(mock_client)
+
+        # Mock enrichment info from client
+        mock_client.get_enrichment_info.return_value = ("TEST", "Test Corp", ".NS")
+
+        # We need to mock yfinance inside core.py
+        # Or we can just mock get_enrichment_info and see if it tries to call yfinance
+        # Since testing yfinance requires internet/mocking external lib, let's patch it.
+
+        with unittest.mock.patch('first_filings.core.yf.Ticker') as mock_ticker:
+            mock_instance = mock_ticker.return_value
+            mock_instance.info = {
+                "currentPrice": 100.0,
+                "marketCap": 100000000 # 10 Cr
+            }
+            # Mock history
+            mock_hist = MagicMock()
+            mock_hist.empty = False
+            mock_hist.__getitem__.return_value.iloc.__getitem__.return_value = 90.0
+            mock_instance.history.return_value = mock_hist
+
+            result = analyzer.enrich_filing_data(
+                scrip_code="12345",
+                announcement_date_str=datetime.now()
+            )
+
+            self.assertIsNotNone(result)
+            self.assertEqual(result["scrip_code"], "12345")
+            self.assertEqual(result["company_name"], "Test Corp")
+            self.assertEqual(result["current_price"], 100.0)
+            self.assertEqual(result["current_mkt_cap_cr"], 10) # 100M / 10M = 10
+            self.assertEqual(result["price_at_announcement"], 90.0)
 
 if __name__ == '__main__':
     unittest.main()

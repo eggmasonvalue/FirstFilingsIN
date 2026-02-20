@@ -87,3 +87,11 @@ The tool generates a JSON output file based on the exchange (e.g., `bse_output.j
   }
 }
 ```
+
+## Development
+
+To ensure code quality and run tests, use the provided check script:
+
+```bash
+./scripts/check.sh
+```

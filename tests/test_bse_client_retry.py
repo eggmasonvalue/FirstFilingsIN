@@ -1,7 +1,6 @@
 import unittest
 from unittest.mock import MagicMock, patch
-from tenacity import RetryError, stop_after_attempt, wait_fixed
-from src.first_filings.bse_client import BSEClient, should_retry
+from first_filings.bse_client import BSEClient, should_retry
 
 class TestBSEClientRetry(unittest.TestCase):
 
@@ -29,7 +28,7 @@ class TestBSEClientRetry(unittest.TestCase):
     def test_should_retry_value_error(self):
         self.assertTrue(should_retry(ValueError("Some Value Error")))
 
-    @patch("src.first_filings.bse_client.BSE")
+    @patch("first_filings.bse_client.BSE")
     def test_fetch_paginated_announcements_retries(self, mock_bse_class):
         # Setup mock
         mock_bse_instance = MagicMock()
@@ -45,7 +44,7 @@ class TestBSEClientRetry(unittest.TestCase):
         client = BSEClient()
 
         # Mock time.sleep to speed up tests
-        with patch("tenacity.nap.time.sleep") as mock_sleep:
+        with patch("tenacity.nap.time.sleep"):
             result = client.fetch_paginated_announcements(
                 from_date="2023-01-01",
                 to_date="2023-01-01",
@@ -57,7 +56,7 @@ class TestBSEClientRetry(unittest.TestCase):
             self.assertEqual(result[0]["SCRIP_CD"], "12345")
             self.assertEqual(mock_bse_instance.announcements.call_count, 3)
 
-    @patch("src.first_filings.bse_client.BSE")
+    @patch("first_filings.bse_client.BSE")
     def test_fetch_paginated_announcements_stops_on_404(self, mock_bse_class):
         mock_bse_instance = MagicMock()
         mock_bse_class.return_value = mock_bse_instance
