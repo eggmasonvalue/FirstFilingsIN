@@ -31,6 +31,12 @@ jobs:
           path: bse_output.json
           retention-days: 1
       
+      - name: Send BSE Output to Discord
+        run: uv run --with requests python scripts/send_discord_webhook.py bse_output.json
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        continue-on-error: true
+
       - name: Run first-filings NSE Main
         run: uv run first-filings --exchange nse-main
 
@@ -40,6 +46,12 @@ jobs:
           name: nse-main-output
           path: nse_main_output.json
           retention-days: 1
+
+      - name: Send NSE Main Output to Discord
+        run: uv run --with requests python scripts/send_discord_webhook.py nse_main_output.json
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        continue-on-error: true
 
       - name: Wait for 30 minutes
         run: sleep 1800
@@ -53,3 +65,9 @@ jobs:
           name: nse-sme-output
           path: nse_sme_output.json
           retention-days: 1
+
+      - name: Send NSE SME Output to Discord
+        run: uv run --with requests python scripts/send_discord_webhook.py nse_sme_output.json
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        continue-on-error: true
