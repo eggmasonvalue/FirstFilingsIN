@@ -1,6 +1,13 @@
+
 # Changelog
 
+## [2.1.1] - 2026-02-21
+
+### Fixed
+-   **CI/CD**: Fixed `skip_wait` option in `daily_run.yml` workflow which was not correctly evaluating boolean inputs.
+
 ## [2.1.0] - 2026-02-19
+
 
 ### Changed
 -   **Code Optimization**: Refactored `core.py` to remove duplicate code and legacy implementations, ensuring clean architecture using `ExchangeClient`.

@@ -2,7 +2,7 @@ name: Daily First Filings Run
 
 on:
   schedule:
-    - cron: '30 21 * * *'
+    - cron: '00 23 * * *'
   workflow_dispatch:
     inputs:
       date:
@@ -10,7 +10,7 @@ on:
         required: false
         type: string
       skip_wait:
-        description: 'Skip 30 min wait?'
+        description: 'Skip 20 min wait?'
         type: boolean
         required: false
         default: false
@@ -73,9 +73,9 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         continue-on-error: true
 
-      - name: Wait for 30 minutes
-        if: ${{ github.event_name == 'schedule' || inputs.skip_wait != 'true' }}
-        run: sleep 1800
+      - name: Wait for 20 minutes
+        if: ${{ github.event_name == 'schedule' || inputs.skip_wait == false }}
+        run: sleep 1200
 
       - name: Run first-filings NSE SME
         run: |
