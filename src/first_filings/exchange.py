@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List, Tuple, Optional
+from typing import List, Optional
 
 @dataclass
 class Announcement:
@@ -18,8 +18,9 @@ class ExchangeClient(ABC):
         pass
 
     @abstractmethod
-    def get_enrichment_info(self, scrip_code: str) -> Tuple[str, Optional[str], str]:
+    def get_scrip_info(self, scrip_code: str, announcement_date: datetime) -> dict:
         """
-        Returns (symbol, company_name, yfinance_suffix)
+        Returns a dictionary with:
+        symbol, company_name, current_price, price_at_announcement, current_mkt_cap_cr
         """
         pass

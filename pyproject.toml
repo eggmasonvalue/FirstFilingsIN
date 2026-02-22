@@ -5,11 +5,10 @@ description = "BSE First Filings Finder"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "bse>=3.1.0",
+    "bse @ git+https://github.com/eggmasonvalue/BseIndiaApi.git",
     "click>=8.0.0",
-    "nse[server]>=2.0.0",
+    "nse[server] @ git+https://github.com/eggmasonvalue/NseIndiaApi.git",
     "tenacity>=8.0.0",
-    "yfinance>=1.2.0",
 ]
 
 [dependency-groups]

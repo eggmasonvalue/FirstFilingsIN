@@ -58,10 +58,6 @@ class BSEClient(ExchangeClient):
         page_count = 1
         total_count = None
 
-        # Use a loop to handle pagination, but the retry logic applies to the *entire fetch process* if any page fails?
-        # Or should we retry per page?
-        # The original code retries the whole function. Let's stick to that, but retry logic is handled by tenacity now.
-
         while True:
             try:
                 # Log fetch attempt
@@ -115,21 +111,11 @@ class BSEClient(ExchangeClient):
         elif category in config.FILING_SUBCATEGORY:
             subcats_to_fetch = config.FILING_SUBCATEGORY[category]
         else:
-            # Maybe it's a direct category or we don't know mapping?
-            # For BSE client, we usually rely on config. 
-            # If not found, log warning? Or assume it's a direct subcategory string?
-            # Existing logic suggests category is the broad type (e.g. "Corp") and subcategory is specific.
-            # But here 'category' arg is mapped to 'subcat_label'.
             logger.warning(f"Category label '{category}' not found in BSE config. Skipping.")
             return []
 
         for subcat in subcats_to_fetch:
             try:
-                # Note: BSE.announcements takes 'category' as the broad BSE category (e.g. 'Corp. Action')
-                # and 'subcategory' as the specific type.
-                # In config.py: FILING_CATEGORY = "Corp. Action"
-                # So we use config.FILING_CATEGORY for the 'category' arg of BSE.announcements
-                
                 raw_announcements = self.fetch_paginated_announcements(
                     from_date=from_date,
                     to_date=to_date,
@@ -180,14 +166,74 @@ class BSEClient(ExchangeClient):
                 
         return all_announcements
 
-    def get_enrichment_info(self, scrip_code: str):
-        lookup_result = self.bse.lookup(str(scrip_code))
+    def get_scrip_info(self, scrip_code: str, announcement_date: datetime) -> dict:
         symbol = None
         company_name = None
-        
-        if lookup_result:
-            symbol = lookup_result.get("symbol")
-            company_name = lookup_result.get("company_name")
-            
-        return symbol, company_name, ".BO"
+        current_price = None
+        current_mkt_cap_cr = None
+        price_at_announcement = None
 
+        try:
+            # 1. Basic Info
+            lookup_result = self.bse.lookup(str(scrip_code))
+            if lookup_result:
+                symbol = lookup_result.get("symbol")
+                company_name = lookup_result.get("company_name")
+
+            # 2. Current Price
+            try:
+                quote = self.bse.quote(str(scrip_code))
+                if quote:
+                    current_price = quote.get("LTP")
+            except Exception as e:
+                logger.warning(f"Error fetching BSE quote for {scrip_code}: {e}")
+
+            # 3. Market Cap
+            try:
+                trading_info = self.bse.stockTrading(str(scrip_code))
+                if trading_info:
+                    # Format is like "19,21,678.78"
+                    mkt_cap_str = trading_info.get("MktCapFull")
+                    if mkt_cap_str:
+                        try:
+                            current_mkt_cap_cr = float(mkt_cap_str.replace(",", ""))
+                        except ValueError:
+                            pass
+            except Exception as e:
+                logger.warning(f"Error fetching BSE trading info for {scrip_code}: {e}")
+            
+            # 4. Historical Price
+            # T12M data
+            try:
+                hist_data = self.bse.equityPriceVolumeT12M(str(scrip_code))
+                if hist_data and "Data" in hist_data and "data" in hist_data["Data"]:
+                     # data is list of [DateStr, Price, Vol]
+                     # DateStr format: 'Thu Feb 20 2025 00:00:00'
+                     target_date = announcement_date.date()
+
+                     rows = hist_data["Data"]["data"]
+                     for row in rows:
+                         if len(row) >= 2:
+                             d_str = row[0]
+                             p_str = row[1]
+                             try:
+                                 # 'Thu Feb 20 2025 00:00:00'
+                                 d = datetime.strptime(d_str, "%a %b %d %Y %H:%M:%S").date()
+                                 if d == target_date:
+                                     price_at_announcement = float(p_str)
+                                     break
+                             except ValueError:
+                                 continue
+            except Exception as e:
+                logger.warning(f"Error fetching BSE historical data for {scrip_code}: {e}")
+
+        except Exception as e:
+            logger.error(f"Error getting scrip info for {scrip_code}: {e}")
+
+        return {
+            "symbol": symbol,
+            "company_name": company_name,
+            "current_price": current_price,
+            "price_at_announcement": price_at_announcement,
+            "current_mkt_cap_cr": current_mkt_cap_cr
+        }
