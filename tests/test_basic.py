@@ -74,36 +74,26 @@ class TestFirstFilingAnalyzer(unittest.TestCase):
         mock_client = MagicMock()
         analyzer = FirstFilingAnalyzer(mock_client)
 
-        # Mock enrichment info from client
-        mock_client.get_enrichment_info.return_value = ("TEST", "Test Corp", ".NS")
+        # Mock get_scrip_info
+        mock_client.get_scrip_info.return_value = {
+            "symbol": "TEST",
+            "company_name": "Test Corp",
+            "current_price": 100.0,
+            "price_at_announcement": 90.0,
+            "current_mkt_cap_cr": 10
+        }
 
-        # We need to mock yfinance inside core.py
-        # Or we can just mock get_enrichment_info and see if it tries to call yfinance
-        # Since testing yfinance requires internet/mocking external lib, let's patch it.
+        result = analyzer.enrich_filing_data(
+            scrip_code="12345",
+            announcement_date_str=datetime.now()
+        )
 
-        with unittest.mock.patch('first_filings.core.yf.Ticker') as mock_ticker:
-            mock_instance = mock_ticker.return_value
-            mock_instance.info = {
-                "currentPrice": 100.0,
-                "marketCap": 100000000 # 10 Cr
-            }
-            # Mock history
-            mock_hist = MagicMock()
-            mock_hist.empty = False
-            mock_hist.__getitem__.return_value.iloc.__getitem__.return_value = 90.0
-            mock_instance.history.return_value = mock_hist
-
-            result = analyzer.enrich_filing_data(
-                scrip_code="12345",
-                announcement_date_str=datetime.now()
-            )
-
-            self.assertIsNotNone(result)
-            self.assertEqual(result["scrip_code"], "12345")
-            self.assertEqual(result["company_name"], "Test Corp")
-            self.assertEqual(result["current_price"], 100.0)
-            self.assertEqual(result["current_mkt_cap_cr"], 10) # 100M / 10M = 10
-            self.assertEqual(result["price_at_announcement"], 90.0)
+        self.assertIsNotNone(result)
+        self.assertEqual(result["scrip_code"], "12345")
+        self.assertEqual(result["company_name"], "Test Corp")
+        self.assertEqual(result["current_price"], 100.0)
+        self.assertEqual(result["current_mkt_cap_cr"], 10)
+        self.assertEqual(result["price_at_announcement"], 90.0)
 
 if __name__ == '__main__':
     unittest.main()

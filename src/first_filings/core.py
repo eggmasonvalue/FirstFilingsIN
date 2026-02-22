@@ -1,4 +1,3 @@
-import yfinance as yf
 from datetime import datetime, timedelta
 import logging
 from typing import Optional, List, Dict
@@ -54,16 +53,6 @@ class FirstFilingAnalyzer:
                 scrip_code=scrip_code
             )
             
-            # If the client supports scrip_code filtering (which they now do),
-            # historical_filings should only contain filings for this company.
-            
-            # The count should be exactly 1 (the current filing being checked)
-            # if this is the first time.
-            # However, fetch_announcements(to_date=filing_date) might include the current filing.
-            # If so, count == 1 means first filing.
-            # If count > 1, means previous filings exist.
-            # If count == 0, something is wrong (current filing not found? or date mismatch?)
-            
             return len(historical_filings) == 1
 
         except Exception as e:
@@ -75,76 +64,55 @@ class FirstFilingAnalyzer:
         """
         Enrich filing with symbol, price, and market cap data.
         """
-        symbol = None
-        # company_name passed in or resolved
-        price_at_announcement = None
-        current_price = None
-        current_mkt_cap_cr = None
+        # Parse date
+        if isinstance(announcement_date_str, str):
+             try:
+                 d = datetime.fromisoformat(announcement_date_str)
+                 announcement_date = d
+             except Exception:
+                 announcement_date = datetime.now()
+        elif isinstance(announcement_date_str, datetime):
+            announcement_date = announcement_date_str
+        else:
+             announcement_date = datetime.now()
+
+        # Initialize result
+        enriched_info = {
+            "symbol": None,
+            "company_name": company_name,
+            "current_price": None,
+            "price_at_announcement": None,
+            "current_mkt_cap_cr": None
+        }
 
         try:
-            # 1. Get Enrichment Info from Exchange Client
-            sym, name, suffix = self.exchange_client.get_enrichment_info(str(scrip_code))
+            # Get Enrichment Info from Exchange Client
+            info = self.exchange_client.get_scrip_info(str(scrip_code), announcement_date)
             
-            if sym:
-                symbol = sym
-            if name and not company_name:
-                company_name = name
+            if info:
+                enriched_info.update({
+                    "symbol": info.get("symbol"),
+                    "current_price": info.get("current_price"),
+                    "price_at_announcement": info.get("price_at_announcement"),
+                    "current_mkt_cap_cr": info.get("current_mkt_cap_cr")
+                })
+                # Only update company name if present in info, else keep original
+                if info.get("company_name"):
+                    enriched_info["company_name"] = info.get("company_name")
             
-            if not symbol:
+            if not enriched_info["symbol"]:
                 logger.warning(f"Could not find symbol for scrip {scrip_code}")
-                return None 
-
-            # 2. Fetch Data from yfinance
-            yf_ticker = f"{symbol}{suffix}"
-            ticker = yf.Ticker(yf_ticker)
-
-            # Fetch Current Data
-            info = ticker.info
-            current_price = info.get("currentPrice")
-            # If currentPrice is missing, try previousClose
-            if current_price is None:
-                current_price = info.get("previousClose")
-
-            mkt_cap_raw = info.get("marketCap")
-            if mkt_cap_raw:
-                current_mkt_cap_cr = int(round(mkt_cap_raw / 10000000)) # Convert to Crores
-
-            # Fetch Historical Price
-            if isinstance(announcement_date_str, str):
-                 try:
-                     d = datetime.fromisoformat(announcement_date_str)
-                     announcement_date = d.date()
-                 except Exception:
-                     announcement_date = datetime.now().date()
-            elif isinstance(announcement_date_str, datetime):
-                announcement_date = announcement_date_str.date()
-            else: 
-                 announcement_date = announcement_date_str
-
-            start_date = announcement_date
-            # yfinance history end date is exclusive, so +1 day
-            end_date = start_date + timedelta(days=1)
-            
-            # But wait, strictly speaking we might want price *on* that day.
-            # If announcement is during market hours, close price of that day.
-            # If after market, close price of that day (or next?).
-            # Plan says price *at* announcement. Close price of date is fine.
-            
-            hist = ticker.history(start=start_date, end=end_date)
-            if not hist.empty:
-                price_at_announcement = hist['Close'].iloc[0]
-            else:
-                pass
+                return None
 
         except Exception as e:
             logger.error(f"Error enriching data for {scrip_code}: {e}")
+            return None
 
         return {
             "scrip_code": str(scrip_code),
-            "company_name": company_name,
+            "company_name": enriched_info["company_name"],
             "date": announcement_date.isoformat(),
-            "price_at_announcement": price_at_announcement,
-            "current_price": current_price,
-            "current_mkt_cap_cr": current_mkt_cap_cr
+            "price_at_announcement": enriched_info["price_at_announcement"],
+            "current_price": enriched_info["current_price"],
+            "current_mkt_cap_cr": enriched_info["current_mkt_cap_cr"]
         }
-
