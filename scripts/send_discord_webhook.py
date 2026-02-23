@@ -21,21 +21,37 @@ def send_embeds(webhook_url, embeds):
             print(f"Error sending embeds: {e}")
 
 def format_filing(filing):
-    # filing: [scrip_code, company_name, price_at_announcement, current_price, current_mkt_cap_cr]
+    # filing: [scrip_code, company_name, price_at_announcement, current_price, current_mkt_cap_cr, attachment_url]
     symbol = filing[0]
     name = filing[1]
     price_at = filing[2]
     curr_price = filing[3]
     mkt_cap = filing[4]
 
+    # Handle optional attachment_url (index 5)
+    attachment_url = filing[5] if len(filing) > 5 else None
+
     # Format numbers
     def fmt_price(p):
-        if p is None: return "N/A"
+        if p is None:
+            return "N/A"
         return f"₹{p:,.2f}" if isinstance(p, (int, float)) else str(p)
 
     mkt_cap_str = f"₹{mkt_cap} Cr" if mkt_cap is not None else "N/A"
 
-    return f"**{name}** ({symbol})\nPrice: {fmt_price(price_at)} -> {fmt_price(curr_price)} | MCap: {mkt_cap_str}\n\n"
+    # Calculate percentage change if prices are available
+    pct_change_str = ""
+    if isinstance(price_at, (int, float)) and isinstance(curr_price, (int, float)) and price_at > 0:
+        change = ((curr_price - price_at) / price_at) * 100
+        sign = "+" if change > 0 else ""
+        pct_change_str = f" ({sign}{change:.1f}%)"
+
+    # Construct Title with Link
+    title = f"**{name}**"
+    if attachment_url:
+        title = f"[{title}]({attachment_url})"
+
+    return f"• {title} ({symbol})\n  Price: {fmt_price(price_at)} -> {fmt_price(curr_price)}{pct_change_str} | MCap: {mkt_cap_str}\n\n"
 
 def process_file(file_path):
     with open(file_path, 'r') as f:

@@ -46,13 +46,14 @@ def save_output(filings_data, failed_checks_count, lookback_years, filename="fir
             if date_str not in nested_data[category]:
                 nested_data[category][date_str] = []
 
-            # Create the optimized array: [scrip, name, price, cur_price, mkt_cap]
+            # Create the optimized array: [scrip, name, price, cur_price, mkt_cap, attachment_url]
             row = [
                 filing['scrip_code'],
                 filing['company_name'],
                 filing['price_at_announcement'],
                 filing['current_price'],
-                filing['current_mkt_cap_cr']
+                filing['current_mkt_cap_cr'],
+                filing.get('attachment_url')
             ]
 
             nested_data[category][date_str].append(row)
@@ -60,7 +61,7 @@ def save_output(filings_data, failed_checks_count, lookback_years, filename="fir
     output = {
         "meta": {
             "generated_at": datetime.now().isoformat(),
-            "columns": ["scrip_code", "company_name", "price_announcement", "current_price", "current_mkt_cap_cr"],
+            "columns": ["scrip_code", "company_name", "price_announcement", "current_price", "current_mkt_cap_cr", "attachment_url"],
             "failed_checks_count": failed_checks_count,
             "lookback_years": lookback_years
         },

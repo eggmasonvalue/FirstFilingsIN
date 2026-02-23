@@ -1,6 +1,6 @@
 import logging
-from datetime import datetime
-from typing import List, Tuple, Optional
+from datetime import datetime, timedelta
+from typing import List, Optional
 from nse import NSE
 from .exchange import ExchangeClient, Announcement
 from . import config
@@ -88,6 +88,9 @@ class NSEClient(ExchangeClient):
         current_mkt_cap_cr = None
         price_at_announcement = None
 
+        # Keep track of active series to fetch history
+        active_series = 'EQ'
+
         try:
             # 1. Quote Data
             try:
@@ -95,6 +98,14 @@ class NSEClient(ExchangeClient):
                 if quote:
                     info = quote.get("info", {})
                     company_name = info.get("companyName") or company_name # Keep existing if any? No, default is None
+
+                    # Determine active series
+                    # info.get('activeSeries') returns list like ['BE']
+                    series_list = info.get('activeSeries', [])
+                    if 'EQ' in series_list:
+                        active_series = 'EQ'
+                    elif series_list:
+                        active_series = series_list[0]
 
                     price_info = quote.get("priceInfo", {})
                     current_price = price_info.get("lastPrice")
@@ -110,14 +121,21 @@ class NSEClient(ExchangeClient):
 
             # 2. Historical Price
             try:
+                # Use a lookback window (e.g., 7 days) to find the nearest trading day
+                from_d = announcement_date - timedelta(days=7)
+                to_d = announcement_date
+
                 hist_data = self.nse.fetch_equity_historical_data(
                     symbol=symbol,
-                    from_date=announcement_date,
-                    to_date=announcement_date
+                    from_date=from_d,
+                    to_date=to_d,
+                    series=active_series
                 )
 
                 if hist_data and len(hist_data) > 0:
-                    price_at_announcement = hist_data[0].get("chClosingPrice")
+                    # Data is usually sorted by date? Or we should take the last one.
+                    # Usually returns ascending order.
+                    price_at_announcement = hist_data[-1].get("chClosingPrice")
             except Exception as e:
                 logger.warning(f"Error fetching NSE historical data for {symbol}: {e}")
 

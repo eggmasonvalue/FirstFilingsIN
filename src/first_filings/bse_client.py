@@ -212,6 +212,8 @@ class BSEClient(ExchangeClient):
                      target_date = announcement_date.date()
 
                      rows = hist_data["Data"]["data"]
+                     best_date = None
+
                      for row in rows:
                          if len(row) >= 2:
                              d_str = row[0]
@@ -219,9 +221,12 @@ class BSEClient(ExchangeClient):
                              try:
                                  # 'Thu Feb 20 2025 00:00:00'
                                  d = datetime.strptime(d_str, "%a %b %d %Y %H:%M:%S").date()
-                                 if d == target_date:
-                                     price_at_announcement = float(p_str)
-                                     break
+
+                                 # Find latest date <= target_date
+                                 if d <= target_date:
+                                     if best_date is None or d > best_date:
+                                         best_date = d
+                                         price_at_announcement = float(p_str)
                              except ValueError:
                                  continue
             except Exception as e:
