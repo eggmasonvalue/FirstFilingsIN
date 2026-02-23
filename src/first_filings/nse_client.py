@@ -133,8 +133,7 @@ class NSEClient(ExchangeClient):
                 )
 
                 if hist_data and len(hist_data) > 0:
-                    # Data is usually sorted by date? Or we should take the last one.
-                    # Usually returns ascending order.
+                    # Data is returned in ascending order by date; use the latest available
                     price_at_announcement = hist_data[-1].get("chClosingPrice")
             except Exception as e:
                 logger.warning(f"Error fetching NSE historical data for {symbol}: {e}")

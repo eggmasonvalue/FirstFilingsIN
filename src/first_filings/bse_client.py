@@ -219,11 +219,11 @@ class BSEClient(ExchangeClient):
                              d_str = row[0]
                              p_str = row[1]
                              try:
-                                 # 'Thu Feb 20 2025 00:00:00'
+                                 # Date format: 'Thu Feb 20 2025 00:00:00'
                                  d = datetime.strptime(d_str, "%a %b %d %Y %H:%M:%S").date()
 
-                                 # Find latest date <= target_date
                                  if d <= target_date:
+                                     # Keep track of the latest available trading date up to the announcement
                                      if best_date is None or d > best_date:
                                          best_date = d
                                          price_at_announcement = float(p_str)
