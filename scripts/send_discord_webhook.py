@@ -53,7 +53,7 @@ def format_filing(filing):
 
     return f"- {title} ({symbol})\n  **Price:** {fmt_price(price_at)} -> {fmt_price(curr_price)}{pct_change_str} | **MCap:** {mkt_cap_str}\n\n"
 
-def process_file(file_path):
+def process_file(file_path, exchange_name):
     with open(file_path, 'r') as f:
         data = json.load(f)
 
@@ -64,18 +64,39 @@ def process_file(file_path):
 
     embeds = []
 
-    # Iterate over categories
-    for category, dates_dict in filings_data.items():
+    # Structure: One or more embeds starting with Exchange Name
+    # H1: Exchange (Title of Embed)
+    # H2: Category (## Category)
+    # H3: Date (### Date)
+
+    current_embed = {
+        "title": f"{exchange_name}",
+        "color": 3447003, # Blueish
+    }
+    current_description = ""
+
+    # Sort categories to ensure consistent order
+    sorted_categories = sorted(filings_data.keys())
+
+    for category in sorted_categories:
+        dates_dict = filings_data[category]
         if not dates_dict:
             continue
 
-        # One embed (or series of embeds) per category
-        current_embed = {
-            "title": f"{category}",
-            "color": 3447003, # Blueish
-        }
+        # Add Category Header
+        cat_header = f"## {category}\n"
 
-        current_description = ""
+        # Check limits for Category Header
+        if len(current_description) + len(cat_header) > 4000:
+             current_embed["description"] = current_description
+             embeds.append(current_embed)
+             current_embed = {
+                "title": f"{exchange_name} (cont.)",
+                "color": 3447003,
+             }
+             current_description = ""
+
+        current_description += cat_header
 
         # Sort dates
         sorted_dates = sorted(dates_dict.keys())
@@ -85,25 +106,28 @@ def process_file(file_path):
             if not filings_list:
                 continue
 
-            # Add Date Header (smaller than title)
+            # Add Date Header
             date_header = f"### {date_str}\n"
 
-            # Check if header fits (unlikely to fail alone but good practice)
+            # Check limits for Date Header
             if len(current_description) + len(date_header) > 4000:
                  current_embed["description"] = current_description
                  embeds.append(current_embed)
                  current_embed = {
-                    "title": f"{category} (cont.)",
+                    "title": f"{exchange_name} (cont.)",
                     "color": 3447003,
                  }
-                 current_description = ""
+                 # If we split here, we might want to re-add Category header for context?
+                 # Ideally yes, but let's keep it simple first or stick to strict hierarchy.
+                 # Re-adding category header if split happens:
+                 current_description = f"## {category} (cont.)\n"
 
             current_description += date_header
 
             for filing in filings_list:
                 text = format_filing(filing)
 
-                # Check limits
+                # Check limits for Content
                 if len(current_description) + len(text) > 4000:
                     # Flush current embed
                     current_embed["description"] = current_description
@@ -111,25 +135,25 @@ def process_file(file_path):
 
                     # Start new embed
                     current_embed = {
-                        "title": f"{category} (cont.)",
+                        "title": f"{exchange_name} (cont.)",
                         "color": 3447003,
                     }
-                    # If split mid-date, re-add date header for context
-                    current_description = f"### {date_str} (cont.)\n{text}"
+                    # Context restoration: Exchange -> Category -> Date
+                    current_description = f"## {category} (cont.)\n### {date_str} (cont.)\n{text}"
                 else:
                     current_description += text
 
-            # Flush remaining description
-            if current_description:
-                 current_embed["description"] = current_description
-
-            embeds.append(current_embed)
+    # Flush remaining description
+    if current_description:
+         current_embed["description"] = current_description
+         embeds.append(current_embed)
 
     return embeds
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Send JSON output to Discord as Embeds.")
     parser.add_argument("file_path", help="Path to the JSON output file.")
+    parser.add_argument("--exchange", required=True, help="Name of the Exchange (e.g. BSE, NSE Mainboard)")
 
     args = parser.parse_args()
 
@@ -143,7 +167,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     try:
-        embeds = process_file(args.file_path)
+        embeds = process_file(args.file_path, args.exchange)
         if embeds:
             send_embeds(webhook_url, embeds)
             print(f"Sent {len(embeds)} embeds to Discord.")

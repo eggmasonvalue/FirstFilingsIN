@@ -47,7 +47,7 @@ jobs:
           retention-days: 1
       
       - name: Send BSE Output to Discord
-        run: uv run --with requests python scripts/send_discord_webhook.py bse_output.json
+        run: uv run --with requests python scripts/send_discord_webhook.py bse_output.json --exchange BSE
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         continue-on-error: true
@@ -68,7 +68,7 @@ jobs:
           retention-days: 1
 
       - name: Send NSE Main Output to Discord
-        run: uv run --with requests python scripts/send_discord_webhook.py nse_main_output.json
+        run: uv run --with requests python scripts/send_discord_webhook.py nse_main_output.json --exchange "NSE Mainboard"
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         continue-on-error: true
@@ -93,7 +93,7 @@ jobs:
           retention-days: 1
 
       - name: Send NSE SME Output to Discord
-        run: uv run --with requests python scripts/send_discord_webhook.py nse_sme_output.json
+        run: uv run --with requests python scripts/send_discord_webhook.py nse_sme_output.json --exchange "NSE SME"
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         continue-on-error: true
