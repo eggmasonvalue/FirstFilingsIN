@@ -74,42 +74,32 @@ def process_file(file_path):
             current_embed = {
                 "title": f"{category} - {date_str}",
                 "color": 3447003, # Blueish
-                "fields": []
             }
 
-            current_field_value = ""
+            current_description = ""
 
             for filing in filings_list:
                 text = format_filing(filing)
 
-                # Check limits
-                if len(current_field_value) + len(text) > MAX_FIELD_VALUE:
-                    # Flush field
-                    current_embed["fields"].append({
-                        "name": "Filings",
-                        "value": current_field_value,
-                        "inline": False
-                    })
-                    current_field_value = text
+                # Discord Embed Description Limit is 4096.
+                # Let's be safe with 4000
+                if len(current_description) + len(text) > 4000:
+                    # Flush current embed
+                    current_embed["description"] = current_description
+                    embeds.append(current_embed)
 
-                    # Check embed size limits (fields count limit is 25)
-                    if len(current_embed["fields"]) >= 25:
-                        embeds.append(current_embed)
-                        current_embed = {
-                            "title": f"{category} - {date_str} (cont.)",
-                            "color": 3447003,
-                            "fields": []
-                        }
+                    # Start new embed
+                    current_embed = {
+                        "title": f"{category} - {date_str} (cont.)",
+                        "color": 3447003,
+                    }
+                    current_description = text
                 else:
-                    current_field_value += text
+                    current_description += text
 
-            # Flush remaining field
-            if current_field_value:
-                 current_embed["fields"].append({
-                        "name": "Filings",
-                        "value": current_field_value,
-                        "inline": False
-                    })
+            # Flush remaining description
+            if current_description:
+                 current_embed["description"] = current_description
 
             embeds.append(current_embed)
 

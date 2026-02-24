@@ -149,13 +149,18 @@ class BSEClient(ExchangeClient):
                         else:
                             dt = datetime.now()
 
+                        attachment_name = ann.get("ATTACHMENTNAME")
+                        attachment_url = None
+                        if attachment_name:
+                            attachment_url = f"https://www.bseindia.com/xml-data/corpfiling/AttachLive/{attachment_name}"
+
                         all_announcements.append(Announcement(
                             scrip_code=str(ann.get("SCRIP_CD")),
                             company_name=ann.get("SLONGNAME", ""),
                             date=dt,
                             category=category, # Use the high-level label
                             description=ann.get("NEWSSUB") or ann.get("HEADLINE") or "",
-                            attachment_url=ann.get("ATTACHMENTNAME")
+                            attachment_url=attachment_url
                         ))
                     except Exception as e:
                         logger.error(f"Error parsing announcement: {e}")
