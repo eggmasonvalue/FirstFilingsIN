@@ -5,7 +5,7 @@
 - [x] **Category Filtering**: Fetches specific subcategories (Analyst Call, Press Release, PPT) or all.
 - [x] **Pagination & Retries**: Handles pagination loops and API failures with exponential backoff using `tenacity`.
 - [x] **First Filing Check**: Efficiently checks history to verify uniqueness.
-- [x] **Data Enrichment**: Adds market context (Price, Market Cap).
+- [x] **Data Enrichment**: Adds market context (Price, Market Cap) via `ExchangeClient` implementations.
 - [x] **Multi-Exchange Support**:
     - [x] **BSE**: Via `bse` library.
     - [x] **NSE Main**: Via `nse` library (index="equities").
@@ -37,4 +37,4 @@
 4.  **Utilities**: Config handling, Logging, and JSON output generation.
 
 # Constraints
-yfinance was considered to avoid 
+`yfinance` was removed to reduce dependencies and rely on direct exchange data.

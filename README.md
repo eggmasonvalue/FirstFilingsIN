@@ -14,7 +14,7 @@ AI agent skill coming soon to help agents understand the tool better. If you're 
 
 - **Multi-Exchange Support**: BSE(SME and Mainboard), NSE Mainboard, NSE SME.
 - **First Filing Detection**: Checks if a company has made a specific type of announcement in the past `N` years.
-- **Enrichment**: Adds Current Market Cap, Current Price, and Price at Announcement (using `yfinance`).
+- **Enrichment**: Adds Current Market Cap, Current Price, and Price at Announcement (using `ExchangeClient` implementations).
 - **Robustness**: Smart retry mechanism for rate limits (429) and transient server errors (502, 503, 504), ensuring reliable data fetching.
 - **Flexible Filtering**: Filter by Date Range (Day, WTD, MTD, QTD) and Categories.
 - **Output**: JSON file with structured data.
@@ -68,26 +68,6 @@ uv run first-filings --exchange bse --lookback-years 3 --press-releases
 ## Output
 
 The tool generates a JSON output file based on the exchange (e.g., `bse_output.json`, `nse_main_output.json`).
-
-**Structure:**
-```json
-{
-  "meta": {
-    "generated_at": "...",
-    "columns": ["scrip_code", "company_name", "price_announcement", "current_price", "current_mkt_cap_cr"],
-    "failed_checks_count": 0,
-    "lookback_years": 2
-  },
-  "data": {
-    "Analyst Call Intimation": {
-      "YYYY-MM-DD": [
-        ["Symbol", "Company Name", Price, CurrentPrice, MktCap],
-        ...
-      ]
-    }
-  }
-}
-```
 
 ## Development
 
