@@ -1,8 +1,8 @@
 import unittest
 from unittest.mock import MagicMock, patch
-from src.first_filings.retries import should_retry_exception, retry_exchange
-from src.first_filings.nse_client import NSEClient
-from src.first_filings.bse_client import BSEClient
+from first_filings.retries import should_retry_exception
+from first_filings.nse_client import NSEClient
+from first_filings.bse_client import BSEClient
 from datetime import datetime
 
 class TestRetries(unittest.TestCase):
