@@ -49,9 +49,9 @@ def format_filing(filing):
     # Construct Title with Link
     title = f"**{name}**"
     if attachment_url:
-        title = f"[{title}]({attachment_url})"
+        title = f"[{name}]({attachment_url})"
 
-    return f"• {title} ({symbol})\n  Price: {fmt_price(price_at)} -> {fmt_price(curr_price)}{pct_change_str} | MCap: {mkt_cap_str}\n\n"
+    return f"- {title} ({symbol})\n  **Price:** {fmt_price(price_at)} -> {fmt_price(curr_price)}{pct_change_str} | **MCap:** {mkt_cap_str}\n\n"
 
 def process_file(file_path):
     with open(file_path, 'r') as f:
@@ -66,23 +66,44 @@ def process_file(file_path):
 
     # Iterate over categories
     for category, dates_dict in filings_data.items():
-        # Iterate over dates
-        for date_str, filings_list in dates_dict.items():
+        if not dates_dict:
+            continue
+
+        # One embed (or series of embeds) per category
+        current_embed = {
+            "title": f"# {category}",
+            "color": 3447003, # Blueish
+        }
+
+        current_description = ""
+
+        # Sort dates
+        sorted_dates = sorted(dates_dict.keys())
+
+        for date_str in sorted_dates:
+            filings_list = dates_dict[date_str]
             if not filings_list:
                 continue
 
-            current_embed = {
-                "title": f"{category} - {date_str}",
-                "color": 3447003, # Blueish
-            }
+            # Add Date Header
+            date_header = f"## {date_str}\n"
 
-            current_description = ""
+            # Check if header fits (unlikely to fail alone but good practice)
+            if len(current_description) + len(date_header) > 4000:
+                 current_embed["description"] = current_description
+                 embeds.append(current_embed)
+                 current_embed = {
+                    "title": f"# {category} (cont.)",
+                    "color": 3447003,
+                 }
+                 current_description = ""
+
+            current_description += date_header
 
             for filing in filings_list:
                 text = format_filing(filing)
 
-                # Discord Embed Description Limit is 4096.
-                # Let's be safe with 4000
+                # Check limits
                 if len(current_description) + len(text) > 4000:
                     # Flush current embed
                     current_embed["description"] = current_description

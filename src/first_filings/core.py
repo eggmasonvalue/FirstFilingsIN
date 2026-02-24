@@ -111,7 +111,7 @@ class FirstFilingAnalyzer:
         return {
             "scrip_code": str(scrip_code),
             "company_name": enriched_info["company_name"],
-            "date": announcement_date.isoformat(),
+            "date": announcement_date.date().isoformat(), # Use only the date part
             "price_at_announcement": enriched_info["price_at_announcement"],
             "current_price": enriched_info["current_price"],
             "current_mkt_cap_cr": enriched_info["current_mkt_cap_cr"],
