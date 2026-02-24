@@ -49,6 +49,11 @@ graph TD
     - `is_first_filing`: Checks history via client to verify uniqueness.
     - `enrich_filing_data`: Enriches findings with Market Cap/Price using `yfinance`.
 
+### `src/first_filings/retries.py`
+**Resilience**:
+-   `retry_exchange` (Decorator): Centralized retry logic using `tenacity`.
+-   `should_retry_exception` (Predicate): Retries on transient errors (Timeout, 429, 502, 503, 504) while failing fast on permanent errors (404, 500).
+
 ### `src/first_filings/cli.py`
 **Entry Point**:
 - Parses arguments (`--exchange`, `--period`, etc.).

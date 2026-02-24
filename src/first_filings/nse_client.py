@@ -4,6 +4,7 @@ from typing import List, Optional
 from nse import NSE
 from .exchange import ExchangeClient, Announcement
 from . import config
+from .retries import retry_exchange, should_retry_exception
 
 logger = logging.getLogger(__name__)
 
@@ -12,6 +13,7 @@ class NSEClient(ExchangeClient):
         self.segment = segment
         self.nse = NSE(download_folder=".", server=True)
 
+    @retry_exchange
     def fetch_announcements(self, from_date: datetime, to_date: datetime, category: str, subcategory: Optional[str] = None, scrip_code: Optional[str] = None) -> List[Announcement]:
         """
         Fetch announcements from NSE and filter by keyword.
@@ -21,66 +23,63 @@ class NSEClient(ExchangeClient):
 
         all_announcements = []
 
-        try:
-            logger.info(f"Fetching NSE announcements for {self.segment} from {from_date} to {to_date}")
-            raw_data = self.nse.announcements(
-                index=self.segment,
-                from_date=from_date,
-                to_date=to_date,
-                symbol=scrip_code
-            )
+        logger.info(f"Fetching NSE announcements for {self.segment} from {from_date} to {to_date}")
+        raw_data = self.nse.announcements(
+            index=self.segment,
+            from_date=from_date,
+            to_date=to_date,
+            symbol=scrip_code
+        )
 
-            # Filter and Map
-            # detailed category mapping
-            keywords = []
-            if subcategory:
-                keywords = config.NSE_CATEGORY_KEYWORDS.get(subcategory, [])
-            elif category in config.NSE_CATEGORY_KEYWORDS:
-                 # If only category is passed (though logic usually passes subcategory)
-                 keywords = config.NSE_CATEGORY_KEYWORDS.get(category, [])
+        # Filter and Map
+        # detailed category mapping
+        keywords = []
+        if subcategory:
+            keywords = config.NSE_CATEGORY_KEYWORDS.get(subcategory, [])
+        elif category in config.NSE_CATEGORY_KEYWORDS:
+             # If only category is passed (though logic usually passes subcategory)
+             keywords = config.NSE_CATEGORY_KEYWORDS.get(category, [])
 
-            if not keywords and subcategory:
-                 # Fallback/Log if no keywords defined
-                 logger.warning(f"No keywords defined for subcategory: {subcategory}")
+        if not keywords and subcategory:
+             # Fallback/Log if no keywords defined
+             logger.warning(f"No keywords defined for subcategory: {subcategory}")
 
-            for item in raw_data:
-                desc = item.get("desc", "")
+        for item in raw_data:
+            desc = item.get("desc", "")
 
-                is_match = False
-                for kw in keywords:
-                    if kw.lower() in desc.lower():
-                        is_match = True
-                        break
+            is_match = False
+            for kw in keywords:
+                if kw.lower() in desc.lower():
+                    is_match = True
+                    break
 
-                if is_match:
-                    # Parse date
-                    dt_str = item.get("an_dt")
-                    if dt_str:
-                        try:
-                            dt = datetime.strptime(dt_str, "%d-%b-%Y %H:%M:%S")
-                        except ValueError:
-                             try:
-                                 dt_str_sort = item.get("sort_date")
-                                 dt = datetime.strptime(dt_str_sort, "%Y-%m-%d %H:%M:%S")
-                             except Exception:
-                                dt = datetime.now()
-                    else:
-                        dt = datetime.now()
+            if is_match:
+                # Parse date
+                dt_str = item.get("an_dt")
+                if dt_str:
+                    try:
+                        dt = datetime.strptime(dt_str, "%d-%b-%Y %H:%M:%S")
+                    except ValueError:
+                         try:
+                             dt_str_sort = item.get("sort_date")
+                             dt = datetime.strptime(dt_str_sort, "%Y-%m-%d %H:%M:%S")
+                         except Exception:
+                            dt = datetime.now()
+                else:
+                    dt = datetime.now()
 
-                    all_announcements.append(Announcement(
-                        scrip_code=item.get("symbol"),
-                        company_name=item.get("sm_name", ""),
-                        date=dt,
-                        category=subcategory if subcategory else category,
-                        description=desc,
-                        attachment_url=item.get("attchmntFile")
-                    ))
-
-        except Exception as e:
-            logger.error(f"Error fetching NSE announcements: {e}")
+                all_announcements.append(Announcement(
+                    scrip_code=item.get("symbol"),
+                    company_name=item.get("sm_name", ""),
+                    date=dt,
+                    category=subcategory if subcategory else category,
+                    description=desc,
+                    attachment_url=item.get("attchmntFile")
+                ))
 
         return all_announcements
 
+    @retry_exchange
     def get_scrip_info(self, scrip_code: str, announcement_date: datetime) -> dict:
         symbol = scrip_code
         company_name = None
@@ -117,6 +116,8 @@ class NSEClient(ExchangeClient):
                         mkt_cap_raw = float(current_price) * float(issued_size)
                         current_mkt_cap_cr = int(round(mkt_cap_raw / 10000000.0))
             except Exception as e:
+                if should_retry_exception(e):
+                    raise e
                 logger.warning(f"Error fetching NSE quote for {symbol}: {e}")
 
             # 2. Historical Price
@@ -136,9 +137,13 @@ class NSEClient(ExchangeClient):
                     # Data is returned in ascending order by date; use the latest available
                     price_at_announcement = hist_data[-1].get("chClosingPrice")
             except Exception as e:
+                if should_retry_exception(e):
+                    raise e
                 logger.warning(f"Error fetching NSE historical data for {symbol}: {e}")
 
         except Exception as e:
+             if should_retry_exception(e):
+                 raise e
              logger.error(f"Error getting scrip info for {symbol}: {e}")
 
         return {
