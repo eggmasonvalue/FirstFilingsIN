@@ -15,7 +15,7 @@ graph TD
     NSE -->|Implements| Exchange
     Exchange -->|Get Data| Libs[BSE/NSE Libraries]
     Core -->|Check History| Exchange
-    Core -->|Enrich Data| YF[YFinance]
+    Core -->|Enrich Data| Exchange
     CLI -->|Save Output| Utils
     CLI -->|Print Summary| Console[Console Output]
 ```
@@ -47,7 +47,7 @@ graph TD
     - Accepts any `ExchangeClient`.
     - `fetch_announcements`: Delegates to client.
     - `is_first_filing`: Checks history via client to verify uniqueness.
-    - `enrich_filing_data`: Enriches findings with Market Cap/Price using `yfinance`.
+    - `enrich_filing_data`: Enriches findings with Market Cap/Price using `ExchangeClient`.
 
 ### `src/first_filings/retries.py`
 **Resilience**:

@@ -13,14 +13,13 @@ This signal often indicates a company's increasing focus on investor relations a
 3.  **First Filing Logic**: Checks historical data (e.g., last 2 years) to determine if the current announcement is the first occurrence of that type for the stock.
 4.  **Data Enrichment**:
     - **Symbol Resolution**: Maps Scrip Codes to Symbols (BSE) or uses NSE Symbols.
-    - **Market Data**: Adds Current Price, Price at Announcement, and Market Cap using `yfinance`.
+    - **Market Data**: Adds Current Price, Price at Announcement, and Market Cap using `ExchangeClient` implementations.
 5.  **Output**: Generates structured JSON files per exchange (e.g., `bse_output.json`, `nse_sme_output.json`).
 
 ## Tech Stack
 -   **Python 3.12+**: Core language.
 -   **Dependencies**:
     -   `click`: CLI interface.
-    -   `yfinance`: Market data.
     -   `tenacity`: Robust retry logic.
     -   `bse`: BSE data fetching.
     -   `nse`: NSE data fetching (Local/PyPI).
