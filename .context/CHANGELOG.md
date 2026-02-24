@@ -1,6 +1,12 @@
 
 # Changelog
 
+## [2.2.0] - 2026-02-21
+
+### Added
+-   **Resilience**: Implemented centralized retry mechanism (`src/first_filings/retries.py`) handling `TimeoutError` and specific `ConnectionError` codes (429, 502, 503, 504) for both BSE and NSE clients.
+-   **NSE/BSE Client**: Updated clients to use the new smart retry decorator, improving reliability during transient network issues or rate limiting.
+
 ## [2.1.1] - 2026-02-21
 
 ### Fixed

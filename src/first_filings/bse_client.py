@@ -1,55 +1,19 @@
 import logging
 from datetime import datetime
-from tenacity import retry, wait_random_exponential, stop_after_attempt, retry_if_exception, before_sleep_log
 from bse import BSE
 from . import config
 from .exchange import ExchangeClient, Announcement
+from .retries import retry_exchange, should_retry_exception
 
 
 logger = logging.getLogger(__name__)
-
-
-def should_retry(exception):
-    """
-    Custom retry predicate.
-    Retries on TimeoutError.
-    Retries on ConnectionError if status code is not 4xx (except 429).
-    Retries on other Exceptions.
-    """
-    if isinstance(exception, TimeoutError):
-        return True
-
-    if isinstance(exception, ConnectionError):
-        # Try to parse status code from message
-        try:
-            msg = str(exception)
-            # Message format is "STATUS_CODE: REASON" e.g. "404: Not Found"
-            if ":" in msg:
-                status_code_str = msg.split(":")[0]
-                status_code = int(status_code_str)
-
-                if status_code == 429:
-                    return True
-                if 400 <= status_code < 500:
-                    return False  # Stop on client errors (400, 401, 403, 404, etc)
-            return True  # Retry on 5xx or other codes
-        except ValueError:
-            return True  # If parsing fails, default to retry
-
-    # Retry on other unexpected exceptions
-    return True
 
 
 class BSEClient(ExchangeClient):
     def __init__(self):
         self.bse = BSE(download_folder=".")
 
-    @retry(
-        stop=stop_after_attempt(config.TOTAL_RETRIES),
-        wait=wait_random_exponential(multiplier=1, min=config.RETRY_MIN_DELAY, max=config.RETRY_MAX_DELAY),
-        retry=retry_if_exception(should_retry),
-        before_sleep=before_sleep_log(logger, logging.WARNING)
-    )
+    @retry_exchange
     def fetch_paginated_announcements(self, from_date, to_date, category, subcategory, scripcode=None, segment="equity"):
         """
         Fetch all paginated announcements for given filters.
@@ -171,6 +135,7 @@ class BSEClient(ExchangeClient):
                 
         return all_announcements
 
+    @retry_exchange
     def get_scrip_info(self, scrip_code: str, announcement_date: datetime) -> dict:
         symbol = None
         company_name = None
@@ -180,10 +145,15 @@ class BSEClient(ExchangeClient):
 
         try:
             # 1. Basic Info
-            lookup_result = self.bse.lookup(str(scrip_code))
-            if lookup_result:
-                symbol = lookup_result.get("symbol")
-                company_name = lookup_result.get("company_name")
+            try:
+                lookup_result = self.bse.lookup(str(scrip_code))
+                if lookup_result:
+                    symbol = lookup_result.get("symbol")
+                    company_name = lookup_result.get("company_name")
+            except Exception as e:
+                 if should_retry_exception(e):
+                    raise e
+                 logger.warning(f"Error lookup BSE info for {scrip_code}: {e}")
 
             # 2. Current Price
             try:
@@ -191,6 +161,8 @@ class BSEClient(ExchangeClient):
                 if quote:
                     current_price = quote.get("LTP")
             except Exception as e:
+                if should_retry_exception(e):
+                    raise e
                 logger.warning(f"Error fetching BSE quote for {scrip_code}: {e}")
 
             # 3. Market Cap
@@ -205,6 +177,8 @@ class BSEClient(ExchangeClient):
                         except ValueError:
                             pass
             except Exception as e:
+                if should_retry_exception(e):
+                    raise e
                 logger.warning(f"Error fetching BSE trading info for {scrip_code}: {e}")
             
             # 4. Historical Price
@@ -235,9 +209,13 @@ class BSEClient(ExchangeClient):
                              except ValueError:
                                  continue
             except Exception as e:
+                if should_retry_exception(e):
+                    raise e
                 logger.warning(f"Error fetching BSE historical data for {scrip_code}: {e}")
 
         except Exception as e:
+            if should_retry_exception(e):
+                 raise e
             logger.error(f"Error getting scrip info for {scrip_code}: {e}")
 
         return {
