@@ -149,13 +149,18 @@ class BSEClient(ExchangeClient):
                         else:
                             dt = datetime.now()
 
+                        attachment_name = ann.get("ATTACHMENTNAME")
+                        attachment_url = None
+                        if attachment_name:
+                            attachment_url = f"https://www.bseindia.com/xml-data/corpfiling/AttachLive/{attachment_name}"
+
                         all_announcements.append(Announcement(
                             scrip_code=str(ann.get("SCRIP_CD")),
                             company_name=ann.get("SLONGNAME", ""),
                             date=dt,
                             category=category, # Use the high-level label
                             description=ann.get("NEWSSUB") or ann.get("HEADLINE") or "",
-                            attachment_url=ann.get("ATTACHMENTNAME")
+                            attachment_url=attachment_url
                         ))
                     except Exception as e:
                         logger.error(f"Error parsing announcement: {e}")
@@ -212,16 +217,21 @@ class BSEClient(ExchangeClient):
                      target_date = announcement_date.date()
 
                      rows = hist_data["Data"]["data"]
+                     best_date = None
+
                      for row in rows:
                          if len(row) >= 2:
                              d_str = row[0]
                              p_str = row[1]
                              try:
-                                 # 'Thu Feb 20 2025 00:00:00'
+                                 # Date format: 'Thu Feb 20 2025 00:00:00'
                                  d = datetime.strptime(d_str, "%a %b %d %Y %H:%M:%S").date()
-                                 if d == target_date:
-                                     price_at_announcement = float(p_str)
-                                     break
+
+                                 if d <= target_date:
+                                     # Keep track of the latest available trading date up to the announcement
+                                     if best_date is None or d > best_date:
+                                         best_date = d
+                                         price_at_announcement = float(p_str)
                              except ValueError:
                                  continue
             except Exception as e:

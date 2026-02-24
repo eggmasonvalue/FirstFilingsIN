@@ -60,7 +60,7 @@ class FirstFilingAnalyzer:
                 self.failed_checks_count += 1
                 return False
 
-    def enrich_filing_data(self, scrip_code, announcement_date_str, company_name=None):
+    def enrich_filing_data(self, scrip_code, announcement_date_str, company_name=None, attachment_url=None):
         """
         Enrich filing with symbol, price, and market cap data.
         """
@@ -111,8 +111,9 @@ class FirstFilingAnalyzer:
         return {
             "scrip_code": str(scrip_code),
             "company_name": enriched_info["company_name"],
-            "date": announcement_date.isoformat(),
+            "date": announcement_date.date().isoformat(), # Use only the date part
             "price_at_announcement": enriched_info["price_at_announcement"],
             "current_price": enriched_info["current_price"],
-            "current_mkt_cap_cr": enriched_info["current_mkt_cap_cr"]
+            "current_mkt_cap_cr": enriched_info["current_mkt_cap_cr"],
+            "attachment_url": attachment_url
         }

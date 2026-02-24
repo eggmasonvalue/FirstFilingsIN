@@ -2,18 +2,13 @@ name: Daily First Filings Run
 
 on:
   schedule:
-    - cron: '00 23 * * *'
+    - cron: '10 18 * * *'
   workflow_dispatch:
     inputs:
       date:
         description: 'Date (DD-MM-YYYY or YYYY-MM-DD)'
         required: false
         type: string
-      skip_wait:
-        description: 'Skip 20 min wait?'
-        type: boolean
-        required: false
-        default: false
 
 jobs:
   run-daily:
@@ -47,7 +42,7 @@ jobs:
           retention-days: 1
       
       - name: Send BSE Output to Discord
-        run: uv run --with requests python scripts/send_discord_webhook.py bse_output.json
+        run: uv run --with requests python scripts/send_discord_webhook.py bse_output.json --exchange BSE
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         continue-on-error: true
@@ -68,14 +63,10 @@ jobs:
           retention-days: 1
 
       - name: Send NSE Main Output to Discord
-        run: uv run --with requests python scripts/send_discord_webhook.py nse_main_output.json
+        run: uv run --with requests python scripts/send_discord_webhook.py nse_main_output.json --exchange "NSE Mainboard"
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         continue-on-error: true
-
-      - name: Wait for 20 minutes
-        if: ${{ github.event_name == 'schedule' || inputs.skip_wait == false }}
-        run: sleep 1200
 
       - name: Run first-filings NSE SME
         run: |
@@ -93,7 +84,7 @@ jobs:
           retention-days: 1
 
       - name: Send NSE SME Output to Discord
-        run: uv run --with requests python scripts/send_discord_webhook.py nse_sme_output.json
+        run: uv run --with requests python scripts/send_discord_webhook.py nse_sme_output.json --exchange "NSE SME"
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         continue-on-error: true

@@ -133,7 +133,12 @@ def main(date, period, lookback_years, analyst_calls, press_releases, presentati
                         logger.info(f"Found first filing: {category_label} - {company_name}")
 
                         # Enrich Data
-                        enriched_data = analyzer.enrich_filing_data(scrip_cd, filing_date_obj, company_name=company_name)
+                        enriched_data = analyzer.enrich_filing_data(
+                            scrip_cd,
+                            filing_date_obj,
+                            company_name=company_name,
+                            attachment_url=filing.attachment_url
+                        )
 
                         if enriched_data:
                             if category_label not in filings_data:
