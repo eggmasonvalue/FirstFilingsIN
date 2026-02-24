@@ -71,7 +71,7 @@ def process_file(file_path):
 
         # One embed (or series of embeds) per category
         current_embed = {
-            "title": f"# {category}",
+            "title": f"{category}",
             "color": 3447003, # Blueish
         }
 
@@ -85,15 +85,15 @@ def process_file(file_path):
             if not filings_list:
                 continue
 
-            # Add Date Header
-            date_header = f"## {date_str}\n"
+            # Add Date Header (smaller than title)
+            date_header = f"### {date_str}\n"
 
             # Check if header fits (unlikely to fail alone but good practice)
             if len(current_description) + len(date_header) > 4000:
                  current_embed["description"] = current_description
                  embeds.append(current_embed)
                  current_embed = {
-                    "title": f"# {category} (cont.)",
+                    "title": f"{category} (cont.)",
                     "color": 3447003,
                  }
                  current_description = ""
@@ -111,10 +111,11 @@ def process_file(file_path):
 
                     # Start new embed
                     current_embed = {
-                        "title": f"{category} - {date_str} (cont.)",
+                        "title": f"{category} (cont.)",
                         "color": 3447003,
                     }
-                    current_description = text
+                    # If split mid-date, re-add date header for context
+                    current_description = f"### {date_str} (cont.)\n{text}"
                 else:
                     current_description += text
 
