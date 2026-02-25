@@ -9,6 +9,36 @@ on:
         description: 'Date (DD-MM-YYYY or YYYY-MM-DD)'
         required: false
         type: string
+      period:
+        description: 'Fetch period'
+        required: false
+        default: 'day'
+        type: choice
+        options:
+          - day
+          - wtd
+          - mtd
+          - qtd
+      lookback_years:
+        description: 'Lookback years'
+        required: false
+        default: '2'
+        type: number
+      analyst_calls:
+        description: 'Fetch Analyst Call Intimations'
+        required: false
+        default: true
+        type: boolean
+      press_releases:
+        description: 'Fetch Press Releases'
+        required: false
+        default: true
+        type: boolean
+      presentations:
+        description: 'Fetch Investor Presentations (PPT)'
+        required: false
+        default: true
+        type: boolean
 
 jobs:
   run-daily:
@@ -32,6 +62,23 @@ jobs:
           if [ -n "${{ inputs.date }}" ]; then
             ARGS="$ARGS --date ${{ inputs.date }}"
           fi
+          if [ -n "${{ inputs.period }}" ]; then
+            ARGS="$ARGS --period ${{ inputs.period }}"
+          fi
+          if [ -n "${{ inputs.lookback_years }}" ]; then
+            ARGS="$ARGS --lookback-years ${{ inputs.lookback_years }}"
+          fi
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            if [ "${{ inputs.analyst_calls }}" == "true" ]; then
+              ARGS="$ARGS --analyst-calls"
+            fi
+            if [ "${{ inputs.press_releases }}" == "true" ]; then
+              ARGS="$ARGS --press-releases"
+            fi
+            if [ "${{ inputs.presentations }}" == "true" ]; then
+              ARGS="$ARGS --presentations"
+            fi
+          fi
           uv run first-filings $ARGS
 
       - name: Upload Output JSON BSE
@@ -53,6 +100,23 @@ jobs:
           if [ -n "${{ inputs.date }}" ]; then
             ARGS="$ARGS --date ${{ inputs.date }}"
           fi
+          if [ -n "${{ inputs.period }}" ]; then
+            ARGS="$ARGS --period ${{ inputs.period }}"
+          fi
+          if [ -n "${{ inputs.lookback_years }}" ]; then
+            ARGS="$ARGS --lookback-years ${{ inputs.lookback_years }}"
+          fi
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            if [ "${{ inputs.analyst_calls }}" == "true" ]; then
+              ARGS="$ARGS --analyst-calls"
+            fi
+            if [ "${{ inputs.press_releases }}" == "true" ]; then
+              ARGS="$ARGS --press-releases"
+            fi
+            if [ "${{ inputs.presentations }}" == "true" ]; then
+              ARGS="$ARGS --presentations"
+            fi
+          fi
           uv run first-filings $ARGS
 
       - name: Upload Output JSON NSE Main
@@ -73,6 +137,23 @@ jobs:
           ARGS="--exchange nse-sme"
           if [ -n "${{ inputs.date }}" ]; then
             ARGS="$ARGS --date ${{ inputs.date }}"
+          fi
+          if [ -n "${{ inputs.period }}" ]; then
+            ARGS="$ARGS --period ${{ inputs.period }}"
+          fi
+          if [ -n "${{ inputs.lookback_years }}" ]; then
+            ARGS="$ARGS --lookback-years ${{ inputs.lookback_years }}"
+          fi
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            if [ "${{ inputs.analyst_calls }}" == "true" ]; then
+              ARGS="$ARGS --analyst-calls"
+            fi
+            if [ "${{ inputs.press_releases }}" == "true" ]; then
+              ARGS="$ARGS --press-releases"
+            fi
+            if [ "${{ inputs.presentations }}" == "true" ]; then
+              ARGS="$ARGS --presentations"
+            fi
           fi
           uv run first-filings $ARGS
 

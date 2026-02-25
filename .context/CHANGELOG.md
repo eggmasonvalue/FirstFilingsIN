@@ -1,6 +1,11 @@
 
 # Changelog
 
+## [2.2.1] - 2026-02-21
+
+### Added
+-   **CI/CD**: Exposed `period`, `lookback_years`, and category flags (`analyst_calls`, `press_releases`, `presentations`) as inputs in `daily_run.yml` workflow dispatch.
+
 ## [2.2.0] - 2026-02-21
 
 ### Added
