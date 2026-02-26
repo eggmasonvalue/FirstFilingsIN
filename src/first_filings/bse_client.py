@@ -26,7 +26,7 @@ class BSEClient(ExchangeClient):
         while True:
             try:
                 # Add a small delay to be polite and avoid rate limits/timeouts
-                time.sleep(0.35)
+                time.sleep(config.BSE_REQUEST_DELAY)
 
                 # Log fetch attempt
                 logger.info(f"Fetching page {page_count} for {subcategory} ({from_date} to {to_date})")

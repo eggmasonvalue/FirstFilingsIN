@@ -6,6 +6,9 @@ RETRY_MIN_DELAY = 1  # Minimum delay in seconds
 RETRY_MAX_DELAY = 30  # Maximum delay in seconds
 RETRY_MULTIPLIER = 2  # Multiplier for exponential backoff
 
+# Request delays
+BSE_REQUEST_DELAY = 0.35  # Seconds to wait between BSE pagination requests
+
 # Filing categories
 FILING_CATEGORY = "Company Update"
 SUBCATEGORY_GENERAL = "General"
