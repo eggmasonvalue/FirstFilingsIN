@@ -25,11 +25,15 @@ wheels = [
 
 [[package]]
 name = "bse"
-version = "3.1.0"
-source = { git = "https://github.com/eggmasonvalue/BseIndiaApi.git#73f106690dc6dea7d86ce6eb9c8526900b797885" }
+version = "3.2.0"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mthrottle" },
     { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/41/92/62a3a24faafc3b35a2e788f99b3af15890f49a234eeb157a55c52e943ce0/bse-3.2.0.tar.gz", hash = "sha256:03f9b237c3984fbe098f27b306e7ed82ff3523a5038b30ab314d0a2cce7f3822", size = 29124, upload-time = "2026-02-25T05:38:14.222Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3b/7e/d4d0062c344612da8aa635c733e69244179ed337142df7a726608e1f0a91/bse-3.2.0-py3-none-any.whl", hash = "sha256:e838bb16c59e6825f0e7ae1d20673a09651d9389ed53243e86de23669f8dafaa", size = 28419, upload-time = "2026-02-25T05:38:13.084Z" },
 ]
 
 [[package]]
@@ -223,7 +227,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "bse", git = "https://github.com/eggmasonvalue/BseIndiaApi.git" },
+    { name = "bse", specifier = ">=3.2.0" },
     { name = "click", specifier = ">=8.0.0" },
     { name = "nse", extras = ["server"], git = "https://github.com/eggmasonvalue/NseIndiaApi.git" },
     { name = "tenacity", specifier = ">=8.0.0" },

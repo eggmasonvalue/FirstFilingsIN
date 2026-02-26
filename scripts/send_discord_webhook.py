@@ -21,7 +21,7 @@ def send_embeds(webhook_url, embeds):
             print(f"Error sending embeds: {e}")
 
 def format_filing(filing):
-    # filing: [scrip_code, company_name, price_at_announcement, current_price, current_mkt_cap_cr, attachment_url]
+    # filing: [scrip_code, company_name, price_at_announcement, current_price, current_mkt_cap_cr, attachment_url, financial_snapshot]
     symbol = filing[0]
     name = filing[1]
     price_at = filing[2]
@@ -30,6 +30,9 @@ def format_filing(filing):
 
     # Handle optional attachment_url (index 5)
     attachment_url = filing[5] if len(filing) > 5 else None
+
+    # Handle optional financial_snapshot (index 6)
+    financial_snapshot = filing[6] if len(filing) > 6 else None
 
     # Format numbers
     def fmt_price(p):
@@ -51,7 +54,30 @@ def format_filing(filing):
     if attachment_url:
         title = f"[{name}]({attachment_url})"
 
-    return f"- {title} ({symbol})\n  **Price:** {fmt_price(price_at)} -> {fmt_price(curr_price)}{pct_change_str} | **MCap:** {mkt_cap_str}\n\n"
+    # Financial Snapshot Formatting
+    fin_str = ""
+    if financial_snapshot and isinstance(financial_snapshot, dict):
+        fin_parts = []
+        # Example keys from BSE API: 'Sales', 'Net Profit', 'EPS'
+        # We need to adapt based on what 'bse.financials()' returns.
+        # Assuming typical keys:
+        if 'Sales' in financial_snapshot:
+             fin_parts.append(f"Sales: {financial_snapshot['Sales']}")
+        if 'Net Profit' in financial_snapshot:
+             fin_parts.append(f"NP: {financial_snapshot['Net Profit']}")
+        # Add more fields if available/relevant
+
+        # If the structure is nested or different, we iterate a few top keys
+        if not fin_parts:
+             # Fallback: take first 3 items
+             for k, v in list(financial_snapshot.items())[:3]:
+                 fin_parts.append(f"{k}: {v}")
+
+        if fin_parts:
+            fin_str = " | ".join(fin_parts)
+            fin_str = f"\n  *Fins: {fin_str}*"
+
+    return f"- {title} ({symbol})\n  **Price:** {fmt_price(price_at)} -> {fmt_price(curr_price)}{pct_change_str} | **MCap:** {mkt_cap_str}{fin_str}\n\n"
 
 def process_file(file_path, exchange_name):
     with open(file_path, 'r') as f:

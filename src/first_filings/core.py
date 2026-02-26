@@ -82,7 +82,8 @@ class FirstFilingAnalyzer:
             "company_name": company_name,
             "current_price": None,
             "price_at_announcement": None,
-            "current_mkt_cap_cr": None
+            "current_mkt_cap_cr": None,
+            "financial_snapshot": None
         }
 
         try:
@@ -94,7 +95,8 @@ class FirstFilingAnalyzer:
                     "symbol": info.get("symbol"),
                     "current_price": info.get("current_price"),
                     "price_at_announcement": info.get("price_at_announcement"),
-                    "current_mkt_cap_cr": info.get("current_mkt_cap_cr")
+                    "current_mkt_cap_cr": info.get("current_mkt_cap_cr"),
+                    "financial_snapshot": info.get("financial_snapshot")
                 })
                 # Only update company name if present in info, else keep original
                 if info.get("company_name"):
@@ -115,5 +117,6 @@ class FirstFilingAnalyzer:
             "price_at_announcement": enriched_info["price_at_announcement"],
             "current_price": enriched_info["current_price"],
             "current_mkt_cap_cr": enriched_info["current_mkt_cap_cr"],
-            "attachment_url": attachment_url
+            "attachment_url": attachment_url,
+            "financial_snapshot": enriched_info["financial_snapshot"]
         }

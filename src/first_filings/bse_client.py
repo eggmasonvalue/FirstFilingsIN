@@ -1,4 +1,5 @@
 import logging
+import time
 from datetime import datetime
 from bse import BSE
 from . import config
@@ -24,6 +25,9 @@ class BSEClient(ExchangeClient):
 
         while True:
             try:
+                # Add a small delay to be polite and avoid rate limits/timeouts
+                time.sleep(1.0)
+
                 # Log fetch attempt
                 logger.info(f"Fetching page {page_count} for {subcategory} ({from_date} to {to_date})")
 
@@ -142,6 +146,7 @@ class BSEClient(ExchangeClient):
         current_price = None
         current_mkt_cap_cr = None
         price_at_announcement = None
+        financial_snapshot = None
 
         try:
             # 1. Basic Info
@@ -180,8 +185,25 @@ class BSEClient(ExchangeClient):
                 if should_retry_exception(e):
                     raise e
                 logger.warning(f"Error fetching BSE trading info for {scrip_code}: {e}")
+
+            # 4. Financial Snapshot
+            try:
+                # Assuming bse >= 3.2.0 has financials method
+                # We need to verify the exact method name or use the one that provides snapshot
+                # In previous versions, it might not be available.
+                # Let's try to get financials if available.
+                # Based on user request, bse 3.2.0+ provides this.
+                # We will store the raw dict or a subset.
+                if hasattr(self.bse, 'financials'):
+                     financials = self.bse.financials(str(scrip_code))
+                     if financials:
+                         financial_snapshot = financials
+            except Exception as e:
+                if should_retry_exception(e):
+                    raise e
+                logger.warning(f"Error fetching BSE financials for {scrip_code}: {e}")
             
-            # 4. Historical Price
+            # 5. Historical Price
             # T12M data
             try:
                 hist_data = self.bse.equityPriceVolumeT12M(str(scrip_code))
@@ -223,5 +245,6 @@ class BSEClient(ExchangeClient):
             "company_name": company_name,
             "current_price": current_price,
             "price_at_announcement": price_at_announcement,
-            "current_mkt_cap_cr": current_mkt_cap_cr
+            "current_mkt_cap_cr": current_mkt_cap_cr,
+            "financial_snapshot": financial_snapshot
         }
