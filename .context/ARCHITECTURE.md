@@ -31,9 +31,9 @@ graph TD
 
 ### `src/first_filings/bse_client.py`
 **BSE Implementation**: Inherits from `ExchangeClient`.
-- Wraps `bse` library.
-- Handles pagination and category mapping.
-- Implements `get_enrichment_info` using BSE lookup.
+- Wraps `bse` library (requires `>=3.2.0`).
+- Handles pagination and category mapping with a 0.35s delay per request to prevent timeouts.
+- Implements `get_enrichment_info` using `getScripTradingStats` and `resultsSnapshot`.
 
 ### `src/first_filings/nse_client.py`
 **NSE Implementation**: Inherits from `ExchangeClient`.

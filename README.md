@@ -14,8 +14,8 @@ AI agent skill coming soon to help agents understand the tool better. If you're 
 
 - **Multi-Exchange Support**: BSE(SME and Mainboard), NSE Mainboard, NSE SME.
 - **First Filing Detection**: Checks if a company has made a specific type of announcement in the past `N` years.
-- **Enrichment**: Adds Current Market Cap, Current Price, and Price at Announcement (using `ExchangeClient` implementations).
-- **Robustness**: Smart retry mechanism for rate limits (429) and transient server errors (502, 503, 504), ensuring reliable data fetching.
+- **Enrichment**: Adds Current Market Cap, Current Price, Price at Announcement, and a **Financial Snapshot** (Revenue, Net Profit, EPS for latest quarters) for BSE filings.
+- **Robustness**: Smart retry mechanism with delays and backoff strategies to handle rate limits and transient server errors effectively.
 - **Flexible Filtering**: Filter by Date Range (Day, WTD, MTD, QTD) and Categories.
 - **Output**: JSON file with structured data.
 

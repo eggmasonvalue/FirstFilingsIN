@@ -21,7 +21,7 @@ def send_embeds(webhook_url, embeds):
             print(f"Error sending embeds: {e}")
 
 def format_filing(filing):
-    # filing: [scrip_code, company_name, price_at_announcement, current_price, current_mkt_cap_cr, attachment_url]
+    # filing: [scrip_code, company_name, price_at_announcement, current_price, current_mkt_cap_cr, attachment_url, financial_snapshot]
     symbol = filing[0]
     name = filing[1]
     price_at = filing[2]
@@ -30,6 +30,9 @@ def format_filing(filing):
 
     # Handle optional attachment_url (index 5)
     attachment_url = filing[5] if len(filing) > 5 else None
+
+    # Handle optional financial_snapshot (index 6)
+    financial_snapshot = filing[6] if len(filing) > 6 else None
 
     # Format numbers
     def fmt_price(p):
@@ -51,7 +54,52 @@ def format_filing(filing):
     if attachment_url:
         title = f"[{name}]({attachment_url})"
 
-    return f"- {title} ({symbol})\n  **Price:** {fmt_price(price_at)} -> {fmt_price(curr_price)}{pct_change_str} | **MCap:** {mkt_cap_str}\n\n"
+    # Financial Snapshot Formatting
+    fin_str = ""
+    if financial_snapshot and isinstance(financial_snapshot, dict):
+        # Expecting structure from resultsSnapshot['results_in_crores']:
+        # { "fields": ["title", "Dec-25", "Sep-25", "FY24-25"], "data": [ ["Revenue", ...], ... ] }
+
+        fields = financial_snapshot.get("fields", [])
+        data_rows = financial_snapshot.get("data", [])
+
+        if fields and data_rows:
+            # Construct a Markdown table in a code block
+            # We will show the first 3 columns: Title, Latest Quarter, Previous Quarter
+            # (Assuming fields[0] is title, fields[1] is latest)
+
+            # Determine headers to show (limit width for Discord)
+            # Typically fields: ["title", "Dec-25", "Sep-25", "FY..."]
+            headers = fields
+
+            # Calculate column widths
+            col_widths = [len(h) for h in headers]
+
+            # Pre-process rows to limit to same columns and update widths
+            rows_to_show = []
+            for row in data_rows:
+                # row is e.g. ["Revenue", "123", "456", "789"]
+                sliced_row = row
+                rows_to_show.append(sliced_row)
+                for i, val in enumerate(sliced_row):
+                    if i < len(col_widths):
+                        col_widths[i] = max(col_widths[i], len(str(val)))
+
+            # Build Table String
+            # Header
+            header_line = " | ".join(f"{h:<{col_widths[i]}}" for i, h in enumerate(headers))
+            separator_line = "-+-".join("-" * w for w in col_widths)
+
+            table_lines = [header_line, separator_line]
+
+            for row in rows_to_show:
+                row_line = " | ".join(f"{str(val):<{col_widths[i]}}" for i, val in enumerate(row))
+                table_lines.append(row_line)
+
+            table_content = "\n".join(table_lines)
+            fin_str = f"\n```\n{table_content}\n```"
+
+    return f"- {title} ({symbol})\n  **Price:** {fmt_price(price_at)} -> {fmt_price(curr_price)}{pct_change_str} | **MCap:** {mkt_cap_str}{fin_str}\n\n"
 
 def process_file(file_path, exchange_name):
     with open(file_path, 'r') as f:
