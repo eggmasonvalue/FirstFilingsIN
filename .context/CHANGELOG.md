@@ -1,6 +1,20 @@
 
 # Changelog
 
+## [2.3.0] - 2026-02-26
+
+### Added
+-   **Financial Snapshot**: Added `financial_snapshot` field to BSE output (via `bse.resultsSnapshot`) and displayed it as a Markdown table in Discord notifications.
+-   **Resilience**: Introduced a 350ms delay between BSE pagination requests to prevent server timeouts and throttling.
+
+### Changed
+-   **Dependencies**: Updated `bse` dependency to `>=3.2.0` to support new API methods.
+-   **Resilience**: Optimized retry configuration (reduced max retries to 10 and max delay to 30s) to fail fast on persistent issues while handling transient ones.
+
+### Fixed
+-   **Regression**: Fixed broken Market Cap field in BSE output by migrating from `stockTrading` to `getScripTradingStats`.
+-   **Workflow**: Resolved issue where BSE workflow would get stuck for hours due to infinite retry loops on timeouts.
+
 ## [2.2.1] - 2026-02-21
 
 ### Added

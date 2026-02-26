@@ -70,7 +70,7 @@ def format_filing(filing):
 
             # Determine headers to show (limit width for Discord)
             # Typically fields: ["title", "Dec-25", "Sep-25", "FY..."]
-            headers = fields[:3]
+            headers = fields
 
             # Calculate column widths
             col_widths = [len(h) for h in headers]
@@ -79,10 +79,11 @@ def format_filing(filing):
             rows_to_show = []
             for row in data_rows:
                 # row is e.g. ["Revenue", "123", "456", "789"]
-                sliced_row = row[:3]
+                sliced_row = row
                 rows_to_show.append(sliced_row)
                 for i, val in enumerate(sliced_row):
-                    col_widths[i] = max(col_widths[i], len(str(val)))
+                    if i < len(col_widths):
+                        col_widths[i] = max(col_widths[i], len(str(val)))
 
             # Build Table String
             # Header
