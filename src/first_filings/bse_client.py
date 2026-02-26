@@ -172,7 +172,12 @@ class BSEClient(ExchangeClient):
 
             # 3. Market Cap
             try:
-                trading_info = self.bse.stockTrading(str(scrip_code))
+                # Use getScripTradingStats in bse >= 3.2.0
+                if hasattr(self.bse, 'getScripTradingStats'):
+                    trading_info = self.bse.getScripTradingStats(str(scrip_code))
+                else:
+                    trading_info = self.bse.stockTrading(str(scrip_code))
+
                 if trading_info:
                     # Format is like "19,21,678.78"
                     mkt_cap_str = trading_info.get("MktCapFull")
@@ -188,16 +193,11 @@ class BSEClient(ExchangeClient):
 
             # 4. Financial Snapshot
             try:
-                # Assuming bse >= 3.2.0 has financials method
-                # We need to verify the exact method name or use the one that provides snapshot
-                # In previous versions, it might not be available.
-                # Let's try to get financials if available.
-                # Based on user request, bse 3.2.0+ provides this.
-                # We will store the raw dict or a subset.
-                if hasattr(self.bse, 'financials'):
-                     financials = self.bse.financials(str(scrip_code))
-                     if financials:
-                         financial_snapshot = financials
+                # Use resultsSnapshot for bse >= 3.2.0
+                if hasattr(self.bse, 'resultsSnapshot'):
+                     snapshot = self.bse.resultsSnapshot(str(scrip_code))
+                     if snapshot and "results_in_crores" in snapshot:
+                         financial_snapshot = snapshot["results_in_crores"]
             except Exception as e:
                 if should_retry_exception(e):
                     raise e

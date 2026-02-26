@@ -57,25 +57,46 @@ def format_filing(filing):
     # Financial Snapshot Formatting
     fin_str = ""
     if financial_snapshot and isinstance(financial_snapshot, dict):
-        fin_parts = []
-        # Example keys from BSE API: 'Sales', 'Net Profit', 'EPS'
-        # We need to adapt based on what 'bse.financials()' returns.
-        # Assuming typical keys:
-        if 'Sales' in financial_snapshot:
-             fin_parts.append(f"Sales: {financial_snapshot['Sales']}")
-        if 'Net Profit' in financial_snapshot:
-             fin_parts.append(f"NP: {financial_snapshot['Net Profit']}")
-        # Add more fields if available/relevant
+        # Expecting structure from resultsSnapshot['results_in_crores']:
+        # { "fields": ["title", "Dec-25", "Sep-25", "FY24-25"], "data": [ ["Revenue", ...], ... ] }
 
-        # If the structure is nested or different, we iterate a few top keys
-        if not fin_parts:
-             # Fallback: take first 3 items
-             for k, v in list(financial_snapshot.items())[:3]:
-                 fin_parts.append(f"{k}: {v}")
+        fields = financial_snapshot.get("fields", [])
+        data_rows = financial_snapshot.get("data", [])
 
-        if fin_parts:
-            fin_str = " | ".join(fin_parts)
-            fin_str = f"\n  *Fins: {fin_str}*"
+        if fields and data_rows:
+            # Construct a Markdown table in a code block
+            # We will show the first 3 columns: Title, Latest Quarter, Previous Quarter
+            # (Assuming fields[0] is title, fields[1] is latest)
+
+            # Determine headers to show (limit width for Discord)
+            # Typically fields: ["title", "Dec-25", "Sep-25", "FY..."]
+            headers = fields[:3]
+
+            # Calculate column widths
+            col_widths = [len(h) for h in headers]
+
+            # Pre-process rows to limit to same columns and update widths
+            rows_to_show = []
+            for row in data_rows:
+                # row is e.g. ["Revenue", "123", "456", "789"]
+                sliced_row = row[:3]
+                rows_to_show.append(sliced_row)
+                for i, val in enumerate(sliced_row):
+                    col_widths[i] = max(col_widths[i], len(str(val)))
+
+            # Build Table String
+            # Header
+            header_line = " | ".join(f"{h:<{col_widths[i]}}" for i, h in enumerate(headers))
+            separator_line = "-+-".join("-" * w for w in col_widths)
+
+            table_lines = [header_line, separator_line]
+
+            for row in rows_to_show:
+                row_line = " | ".join(f"{str(val):<{col_widths[i]}}" for i, val in enumerate(row))
+                table_lines.append(row_line)
+
+            table_content = "\n".join(table_lines)
+            fin_str = f"\n```\n{table_content}\n```"
 
     return f"- {title} ({symbol})\n  **Price:** {fmt_price(price_at)} -> {fmt_price(curr_price)}{pct_change_str} | **MCap:** {mkt_cap_str}{fin_str}\n\n"
 
