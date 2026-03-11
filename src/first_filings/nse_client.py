@@ -58,16 +58,22 @@ class NSEClient(ExchangeClient):
             if is_match:
                 # Parse date
                 dt_str = item.get("an_dt")
+                dt = None
                 if dt_str:
                     try:
                         dt = datetime.strptime(dt_str, "%d-%b-%Y %H:%M:%S")
                     except ValueError:
-                         try:
-                             dt_str_sort = item.get("sort_date")
-                             dt = datetime.strptime(dt_str_sort, "%Y-%m-%d %H:%M:%S")
-                         except Exception:
-                            dt = datetime.now()
-                else:
+                        pass
+
+                if not dt:
+                    try:
+                        dt_str_sort = item.get("sort_date")
+                        if dt_str_sort:
+                            dt = datetime.strptime(dt_str_sort, "%Y-%m-%d %H:%M:%S")
+                    except Exception:
+                        pass
+
+                if not dt:
                     dt = datetime.now()
 
                 all_announcements.append(Announcement(
