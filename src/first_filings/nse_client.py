@@ -44,12 +44,14 @@ class NSEClient(ExchangeClient):
              # Fallback/Log if no keywords defined
              logger.warning(f"No keywords defined for subcategory: {subcategory}")
 
+        lowered_keywords = [kw.lower() for kw in keywords]
         for item in raw_data:
             desc = item.get("desc", "")
+            desc_lower = desc.lower()
 
             is_match = False
-            for kw in keywords:
-                if kw.lower() in desc.lower():
+            for kw in lowered_keywords:
+                if kw in desc_lower:
                     is_match = True
                     break
 

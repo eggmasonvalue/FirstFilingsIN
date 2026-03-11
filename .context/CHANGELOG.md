@@ -1,6 +1,11 @@
 
 # Changelog
 
+## [2.3.1] - 2026-02-27
+
+### Optimized
+-   **NSE Client**: Optimized announcement filtering logic by pre-calculating lowered keywords and lowercasing the description once per item, resulting in ~50% reduction in filtering time.
+
 ## [2.3.0] - 2026-02-26
 
 ### Added
