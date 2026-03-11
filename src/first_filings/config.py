@@ -41,4 +41,3 @@ CLI_FLAGS = {
 
 # Logging
 LOG_FILE = "first_filings.log"
-ARCHIVE_FILE = "first_filings_archive.json"

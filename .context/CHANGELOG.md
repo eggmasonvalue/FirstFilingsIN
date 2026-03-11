@@ -1,6 +1,11 @@
 
 # Changelog
 
+## [2.3.1] - 2026-03-05
+
+### Changed
+- **Code Health**: Removed unused `ARCHIVE_FILE` configuration variable.
+
 ## [2.3.0] - 2026-02-26
 
 ### Added
