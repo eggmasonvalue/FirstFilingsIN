@@ -8,7 +8,7 @@ RETRY_MULTIPLIER = 2  # Multiplier for exponential backoff
 
 # Request delays
 BSE_REQUEST_DELAY = 0.35  # Seconds to wait between BSE pagination requests
-BSE_MAX_PAGES = 1000  # Maximum number of pages to fetch to avoid infinite loops
+BSE_MAX_PAGES = 10000  # Maximum number of pages to fetch to avoid infinite loops
 
 # Filing categories
 FILING_CATEGORY = "Company Update"

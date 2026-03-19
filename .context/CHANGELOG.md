@@ -4,7 +4,7 @@
 ## [2.3.2] - 2026-03-05
 
 ### Security
--   **BSE Client**: Mitigated potential infinite loop and resource exhaustion (CWE-400) by replacing unbounded `while True` pagination with a bounded loop using `BSE_MAX_PAGES` (default 1000).
+-   **BSE Client**: Mitigated potential infinite loop and resource exhaustion (CWE-400) by replacing unbounded `while True` pagination with a bounded loop using `BSE_MAX_PAGES` (default 10000).
 
 ## [2.3.1] - 2026-02-27
 
