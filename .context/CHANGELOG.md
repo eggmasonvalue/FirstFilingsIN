@@ -1,6 +1,11 @@
 
 # Changelog
 
+## [2.3.2] - 2026-03-18
+
+### Added
+-   **Testing**: Added unit tests for `save_output` in `utils.py`, covering both successful data transformation and error handling (e.g., file permission issues).
+
 ## [2.3.1] - 2026-02-27
 
 ### Optimized
