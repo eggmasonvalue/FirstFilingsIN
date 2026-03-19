@@ -15,21 +15,30 @@ class BSEClient(ExchangeClient):
         self.bse = BSE(download_folder=".")
 
     @retry_exchange
-    def fetch_paginated_announcements(self, from_date, to_date, category, subcategory, scripcode=None, segment="equity"):
+    def fetch_paginated_announcements(
+        self,
+        from_date,
+        to_date,
+        category,
+        subcategory,
+        scripcode=None,
+        segment="equity",
+    ):
         """
         Fetch all paginated announcements for given filters.
         """
         all_ann = []
-        page_count = 1
         total_count = None
 
-        while True:
+        for page_count in range(1, config.BSE_MAX_PAGES + 1):
             try:
                 # Add a small delay to be polite and avoid rate limits/timeouts
                 time.sleep(config.BSE_REQUEST_DELAY)
 
                 # Log fetch attempt
-                logger.info(f"Fetching page {page_count} for {subcategory} ({from_date} to {to_date})")
+                logger.info(
+                    f"Fetching page {page_count} for {subcategory} ({from_date} to {to_date})"
+                )
 
                 data = self.bse.announcements(
                     page_no=page_count,
@@ -54,24 +63,30 @@ class BSEClient(ExchangeClient):
                     all_ann.extend(page_ann)
 
                 # Check if we have fetched all announcements
-                if len(all_ann) >= total_count or not page_ann:
+                if (
+                    total_count is not None and len(all_ann) >= total_count
+                ) or not page_ann:
                     break
-
-                page_count += 1
 
             except Exception as e:
                 logger.error(f"Error fetching page {page_count}: {e}")
-                raise e # Re-raise to trigger retry
+                raise e  # Re-raise to trigger retry
+        else:
+            logger.warning(
+                f"Reached maximum pages ({config.BSE_MAX_PAGES}) for {subcategory} ({from_date} to {to_date})"
+            )
 
         return all_ann
 
-    def fetch_announcements(self, from_date, to_date, category, subcategory=None, scrip_code=None) -> list[Announcement]:
+    def fetch_announcements(
+        self, from_date, to_date, category, subcategory=None, scrip_code=None
+    ) -> list[Announcement]:
         """
         Fetch announcements and map to standardized Announcement objects.
         If category is a label (e.g. "Analyst Call Intimation"), fetch all corresponding BSE subcategories.
         """
         all_announcements = []
-        
+
         # Determine subcategories to fetch
         subcats_to_fetch = []
         if subcategory:
@@ -79,7 +94,9 @@ class BSEClient(ExchangeClient):
         elif category in config.FILING_SUBCATEGORY:
             subcats_to_fetch = config.FILING_SUBCATEGORY[category]
         else:
-            logger.warning(f"Category label '{category}' not found in BSE config. Skipping.")
+            logger.warning(
+                f"Category label '{category}' not found in BSE config. Skipping."
+            )
             return []
 
         for subcat in subcats_to_fetch:
@@ -87,11 +104,11 @@ class BSEClient(ExchangeClient):
                 raw_announcements = self.fetch_paginated_announcements(
                     from_date=from_date,
                     to_date=to_date,
-                    category=config.FILING_CATEGORY, 
+                    category=config.FILING_CATEGORY,
                     subcategory=subcat,
-                    scripcode=scrip_code
+                    scripcode=scrip_code,
                 )
-                
+
                 # Filter if needed (e.g. valid checks or keywords)
                 if (
                     subcat == config.SUBCATEGORY_GENERAL
@@ -100,10 +117,12 @@ class BSEClient(ExchangeClient):
                     keyword = config.FILING_SUBCATEGORY_GENERAL_KEYWORD[category]
                     filtered_raw = []
                     for filing in raw_announcements:
-                         newssub = filing.get("NEWSSUB") or ""
-                         headline = filing.get("HEADLINE") or ""
-                         if (keyword.lower() in newssub.lower()) or (keyword.lower() in headline.lower()):
-                             filtered_raw.append(filing)
+                        newssub = filing.get("NEWSSUB") or ""
+                        headline = filing.get("HEADLINE") or ""
+                        if (keyword.lower() in newssub.lower()) or (
+                            keyword.lower() in headline.lower()
+                        ):
+                            filtered_raw.append(filing)
                     raw_announcements = filtered_raw
 
                 for ann in raw_announcements:
@@ -122,21 +141,25 @@ class BSEClient(ExchangeClient):
                         if attachment_name:
                             attachment_url = f"https://www.bseindia.com/xml-data/corpfiling/AttachLive/{attachment_name}"
 
-                        all_announcements.append(Announcement(
-                            scrip_code=str(ann.get("SCRIP_CD")),
-                            company_name=ann.get("SLONGNAME", ""),
-                            date=dt,
-                            category=category, # Use the high-level label
-                            description=ann.get("NEWSSUB") or ann.get("HEADLINE") or "",
-                            attachment_url=attachment_url
-                        ))
+                        all_announcements.append(
+                            Announcement(
+                                scrip_code=str(ann.get("SCRIP_CD")),
+                                company_name=ann.get("SLONGNAME", ""),
+                                date=dt,
+                                category=category,  # Use the high-level label
+                                description=ann.get("NEWSSUB")
+                                or ann.get("HEADLINE")
+                                or "",
+                                attachment_url=attachment_url,
+                            )
+                        )
                     except Exception as e:
                         logger.error(f"Error parsing announcement: {e}")
                         continue
             except Exception as e:
                 logger.error(f"Error fetching BSE subcategory {subcat}: {e}")
                 continue
-                
+
         return all_announcements
 
     @retry_exchange
@@ -156,9 +179,9 @@ class BSEClient(ExchangeClient):
                     symbol = lookup_result.get("symbol")
                     company_name = lookup_result.get("company_name")
             except Exception as e:
-                 if should_retry_exception(e):
+                if should_retry_exception(e):
                     raise e
-                 logger.warning(f"Error lookup BSE info for {scrip_code}: {e}")
+                logger.warning(f"Error lookup BSE info for {scrip_code}: {e}")
 
             # 2. Current Price
             try:
@@ -173,7 +196,7 @@ class BSEClient(ExchangeClient):
             # 3. Market Cap
             try:
                 # Use getScripTradingStats in bse >= 3.2.0
-                if hasattr(self.bse, 'getScripTradingStats'):
+                if hasattr(self.bse, "getScripTradingStats"):
                     trading_info = self.bse.getScripTradingStats(str(scrip_code))
                 else:
                     trading_info = self.bse.stockTrading(str(scrip_code))
@@ -194,50 +217,54 @@ class BSEClient(ExchangeClient):
             # 4. Financial Snapshot
             try:
                 # Use resultsSnapshot for bse >= 3.2.0
-                if hasattr(self.bse, 'resultsSnapshot'):
-                     snapshot = self.bse.resultsSnapshot(str(scrip_code))
-                     if snapshot and "results_in_crores" in snapshot:
-                         financial_snapshot = snapshot["results_in_crores"]
+                if hasattr(self.bse, "resultsSnapshot"):
+                    snapshot = self.bse.resultsSnapshot(str(scrip_code))
+                    if snapshot and "results_in_crores" in snapshot:
+                        financial_snapshot = snapshot["results_in_crores"]
             except Exception as e:
                 if should_retry_exception(e):
                     raise e
                 logger.warning(f"Error fetching BSE financials for {scrip_code}: {e}")
-            
+
             # 5. Historical Price
             # T12M data
             try:
                 hist_data = self.bse.equityPriceVolumeT12M(str(scrip_code))
                 if hist_data and "Data" in hist_data and "data" in hist_data["Data"]:
-                     # data is list of [DateStr, Price, Vol]
-                     # DateStr format: 'Thu Feb 20 2025 00:00:00'
-                     target_date = announcement_date.date()
+                    # data is list of [DateStr, Price, Vol]
+                    # DateStr format: 'Thu Feb 20 2025 00:00:00'
+                    target_date = announcement_date.date()
 
-                     rows = hist_data["Data"]["data"]
-                     best_date = None
+                    rows = hist_data["Data"]["data"]
+                    best_date = None
 
-                     for row in rows:
-                         if len(row) >= 2:
-                             d_str = row[0]
-                             p_str = row[1]
-                             try:
-                                 # Date format: 'Thu Feb 20 2025 00:00:00'
-                                 d = datetime.strptime(d_str, "%a %b %d %Y %H:%M:%S").date()
+                    for row in rows:
+                        if len(row) >= 2:
+                            d_str = row[0]
+                            p_str = row[1]
+                            try:
+                                # Date format: 'Thu Feb 20 2025 00:00:00'
+                                d = datetime.strptime(
+                                    d_str, "%a %b %d %Y %H:%M:%S"
+                                ).date()
 
-                                 if d <= target_date:
-                                     # Keep track of the latest available trading date up to the announcement
-                                     if best_date is None or d > best_date:
-                                         best_date = d
-                                         price_at_announcement = float(p_str)
-                             except ValueError:
-                                 continue
+                                if d <= target_date:
+                                    # Keep track of the latest available trading date up to the announcement
+                                    if best_date is None or d > best_date:
+                                        best_date = d
+                                        price_at_announcement = float(p_str)
+                            except ValueError:
+                                continue
             except Exception as e:
                 if should_retry_exception(e):
                     raise e
-                logger.warning(f"Error fetching BSE historical data for {scrip_code}: {e}")
+                logger.warning(
+                    f"Error fetching BSE historical data for {scrip_code}: {e}"
+                )
 
         except Exception as e:
             if should_retry_exception(e):
-                 raise e
+                raise e
             logger.error(f"Error getting scrip info for {scrip_code}: {e}")
 
         return {
@@ -246,5 +273,5 @@ class BSEClient(ExchangeClient):
             "current_price": current_price,
             "price_at_announcement": price_at_announcement,
             "current_mkt_cap_cr": current_mkt_cap_cr,
-            "financial_snapshot": financial_snapshot
+            "financial_snapshot": financial_snapshot,
         }

@@ -8,6 +8,7 @@ RETRY_MULTIPLIER = 2  # Multiplier for exponential backoff
 
 # Request delays
 BSE_REQUEST_DELAY = 0.35  # Seconds to wait between BSE pagination requests
+BSE_MAX_PAGES = 1000  # Maximum number of pages to fetch to avoid infinite loops
 
 # Filing categories
 FILING_CATEGORY = "Company Update"
@@ -21,14 +22,17 @@ FILING_SUBCATEGORY = {
     "PPT": ["Investor Presentation", SUBCATEGORY_GENERAL],
 }
 
-FILING_SUBCATEGORY_GENERAL_KEYWORD = {
-    "PPT": "Presentation"
-}
+FILING_SUBCATEGORY_GENERAL_KEYWORD = {"PPT": "Presentation"}
 
 NSE_CATEGORY_KEYWORDS = {
-    "Analyst Call Intimation": ["Analyst", "Institutional Investor", "Meet", "Con. Call"],
+    "Analyst Call Intimation": [
+        "Analyst",
+        "Institutional Investor",
+        "Meet",
+        "Con. Call",
+    ],
     "Press Release": ["Press Release", "Media Release"],
-    "Presentation": ["Presentation", "Investor Presentation"]
+    "Presentation": ["Presentation", "Investor Presentation"],
 }
 
 # CLI Flags mapping
