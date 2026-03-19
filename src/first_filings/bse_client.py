@@ -115,12 +115,13 @@ class BSEClient(ExchangeClient):
                     and category in config.FILING_SUBCATEGORY_GENERAL_KEYWORD
                 ):
                     keyword = config.FILING_SUBCATEGORY_GENERAL_KEYWORD[category]
+                    keyword_lower = keyword.lower()
                     filtered_raw = []
                     for filing in raw_announcements:
                         newssub = filing.get("NEWSSUB") or ""
                         headline = filing.get("HEADLINE") or ""
-                        if (keyword.lower() in newssub.lower()) or (
-                            keyword.lower() in headline.lower()
+                        if (keyword_lower in newssub.lower()) or (
+                            keyword_lower in headline.lower()
                         ):
                             filtered_raw.append(filing)
                     raw_announcements = filtered_raw

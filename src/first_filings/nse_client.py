@@ -8,13 +8,21 @@ from .retries import retry_exchange, should_retry_exception
 
 logger = logging.getLogger(__name__)
 
+
 class NSEClient(ExchangeClient):
     def __init__(self, segment: str = "equities"):
         self.segment = segment
         self.nse = NSE(download_folder=".", server=True)
 
     @retry_exchange
-    def fetch_announcements(self, from_date: datetime, to_date: datetime, category: str, subcategory: Optional[str] = None, scrip_code: Optional[str] = None) -> List[Announcement]:
+    def fetch_announcements(
+        self,
+        from_date: datetime,
+        to_date: datetime,
+        category: str,
+        subcategory: Optional[str] = None,
+        scrip_code: Optional[str] = None,
+    ) -> List[Announcement]:
         """
         Fetch announcements from NSE and filter by keyword.
         """
@@ -23,12 +31,11 @@ class NSEClient(ExchangeClient):
 
         all_announcements = []
 
-        logger.info(f"Fetching NSE announcements for {self.segment} from {from_date} to {to_date}")
+        logger.info(
+            f"Fetching NSE announcements for {self.segment} from {from_date} to {to_date}"
+        )
         raw_data = self.nse.announcements(
-            index=self.segment,
-            from_date=from_date,
-            to_date=to_date,
-            symbol=scrip_code
+            index=self.segment, from_date=from_date, to_date=to_date, symbol=scrip_code
         )
 
         # Filter and Map
@@ -37,12 +44,12 @@ class NSEClient(ExchangeClient):
         if subcategory:
             keywords = config.NSE_CATEGORY_KEYWORDS.get(subcategory, [])
         elif category in config.NSE_CATEGORY_KEYWORDS:
-             # If only category is passed (though logic usually passes subcategory)
-             keywords = config.NSE_CATEGORY_KEYWORDS.get(category, [])
+            # If only category is passed (though logic usually passes subcategory)
+            keywords = config.NSE_CATEGORY_KEYWORDS.get(category, [])
 
         if not keywords and subcategory:
-             # Fallback/Log if no keywords defined
-             logger.warning(f"No keywords defined for subcategory: {subcategory}")
+            # Fallback/Log if no keywords defined
+            logger.warning(f"No keywords defined for subcategory: {subcategory}")
 
         lowered_keywords = [kw.lower() for kw in keywords]
         for item in raw_data:
@@ -76,14 +83,16 @@ class NSEClient(ExchangeClient):
                 if not dt:
                     dt = datetime.now()
 
-                all_announcements.append(Announcement(
-                    scrip_code=item.get("symbol"),
-                    company_name=item.get("sm_name", ""),
-                    date=dt,
-                    category=subcategory if subcategory else category,
-                    description=desc,
-                    attachment_url=item.get("attchmntFile")
-                ))
+                all_announcements.append(
+                    Announcement(
+                        scrip_code=item.get("symbol"),
+                        company_name=item.get("sm_name", ""),
+                        date=dt,
+                        category=subcategory if subcategory else category,
+                        description=desc,
+                        attachment_url=item.get("attchmntFile"),
+                    )
+                )
 
         return all_announcements
 
@@ -96,7 +105,7 @@ class NSEClient(ExchangeClient):
         price_at_announcement = None
 
         # Keep track of active series to fetch history
-        active_series = 'EQ'
+        active_series = "EQ"
 
         try:
             # 1. Quote Data
@@ -104,13 +113,13 @@ class NSEClient(ExchangeClient):
                 quote = self.nse.quote(symbol)
                 if quote:
                     info = quote.get("info", {})
-                    company_name = info.get("companyName") or company_name # Keep existing if any? No, default is None
+                    company_name = info.get("companyName") or company_name
 
                     # Determine active series
                     # info.get('activeSeries') returns list like ['BE']
-                    series_list = info.get('activeSeries', [])
-                    if 'EQ' in series_list:
-                        active_series = 'EQ'
+                    series_list = info.get("activeSeries", [])
+                    if "EQ" in series_list:
+                        active_series = "EQ"
                     elif series_list:
                         active_series = series_list[0]
 
@@ -135,10 +144,7 @@ class NSEClient(ExchangeClient):
                 to_d = announcement_date
 
                 hist_data = self.nse.fetch_equity_historical_data(
-                    symbol=symbol,
-                    from_date=from_d,
-                    to_date=to_d,
-                    series=active_series
+                    symbol=symbol, from_date=from_d, to_date=to_d, series=active_series
                 )
 
                 if hist_data and len(hist_data) > 0:
@@ -150,14 +156,14 @@ class NSEClient(ExchangeClient):
                 logger.warning(f"Error fetching NSE historical data for {symbol}: {e}")
 
         except Exception as e:
-             if should_retry_exception(e):
-                 raise e
-             logger.error(f"Error getting scrip info for {symbol}: {e}")
+            if should_retry_exception(e):
+                raise e
+            logger.error(f"Error getting scrip info for {symbol}: {e}")
 
         return {
             "symbol": symbol,
             "company_name": company_name,
             "current_price": current_price,
             "price_at_announcement": price_at_announcement,
-            "current_mkt_cap_cr": current_mkt_cap_cr
+            "current_mkt_cap_cr": current_mkt_cap_cr,
         }
