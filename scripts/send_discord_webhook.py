@@ -13,7 +13,7 @@ def send_embeds(webhook_url, embeds):
         chunk = embeds[i:i + MAX_EMBEDS_PER_MESSAGE]
         payload = {"embeds": chunk}
         try:
-            response = requests.post(webhook_url, json=payload)
+            response = requests.post(webhook_url, json=payload, timeout=10)
             if response.status_code not in [200, 204]:
                 print(f"Failed to send embeds chunk {i}. Status: {response.status_code}")
                 print(response.text)

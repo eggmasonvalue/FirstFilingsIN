@@ -1,6 +1,11 @@
 
 # Changelog
 
+## [2.3.3] - 2026-03-18
+
+### Security
+-   **Discord Webhook**: Added a 10-second timeout to the `requests.post` call in `scripts/send_discord_webhook.py` to prevent the script from hanging indefinitely during network issues or slow responses from the Discord API.
+
 ## [2.3.2] - 2026-03-05
 
 ### Security
