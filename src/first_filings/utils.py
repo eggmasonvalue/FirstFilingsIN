@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 from datetime import datetime
 from . import config
 
@@ -8,6 +9,10 @@ def setup_logging(log_file=config.LOG_FILE):
     Configure logging to write to a file.
     Overwrites the log file on each run.
     """
+    log_dir = os.path.dirname(log_file)
+    if log_dir and not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+
     # Remove existing handlers
     for handler in logging.root.handlers[:]:
         logging.root.removeHandler(handler)

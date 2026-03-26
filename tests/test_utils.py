@@ -1,10 +1,45 @@
 import unittest
-import json
 from unittest.mock import patch, mock_open, MagicMock
-from datetime import datetime
-from first_filings.utils import save_output
+from first_filings.utils import save_output, setup_logging
 
 class TestUtils(unittest.TestCase):
+    def test_setup_logging_dir_creation(self):
+        log_file = "logs/test.log"
+        with patch("os.path.exists", return_value=False) as mock_exists:
+            with patch("os.makedirs") as mock_makedirs:
+                with patch("logging.basicConfig") as mock_basic_config:
+                    with patch("logging.root.removeHandler") as mock_remove_handler:
+                        # Mock logging.root.handlers as a list
+                        with patch("logging.root.handlers", [MagicMock()]):
+                            setup_logging(log_file)
+
+                            mock_exists.assert_called_once_with("logs")
+                            mock_makedirs.assert_called_once_with("logs")
+                            mock_remove_handler.assert_called()
+                            mock_basic_config.assert_called_once()
+                            _, kwargs = mock_basic_config.call_args
+                            self.assertEqual(kwargs['filename'], log_file)
+                            self.assertEqual(kwargs['filemode'], 'w')
+
+    def test_setup_logging_no_dir(self):
+        # Case where log_file is just a filename in current directory
+        log_file = "test.log"
+        with patch("os.path.exists") as mock_exists:
+            with patch("os.makedirs") as mock_makedirs:
+                with patch("logging.basicConfig"):
+                    setup_logging(log_file)
+                    mock_exists.assert_not_called()
+                    mock_makedirs.assert_not_called()
+
+    def test_setup_logging_dir_exists(self):
+        log_file = "logs/test.log"
+        with patch("os.path.exists", return_value=True) as mock_exists:
+            with patch("os.makedirs") as mock_makedirs:
+                with patch("logging.basicConfig"):
+                    setup_logging(log_file)
+                    mock_exists.assert_called_once_with("logs")
+                    mock_makedirs.assert_not_called()
+
     def test_save_output_success(self):
         # Sample input data
         filings_data = {
@@ -31,7 +66,7 @@ class TestUtils(unittest.TestCase):
         with patch("first_filings.utils.datetime") as mock_datetime:
             mock_datetime.now.return_value.isoformat.return_value = fixed_now_str
 
-            with patch("builtins.open", mock_open()) as mocked_file:
+            with patch("builtins.open", mock_open()):
                 with patch("json.dump") as mock_json_dump:
                     result = save_output(filings_data, failed_checks_count, lookback_years, filename)
 
