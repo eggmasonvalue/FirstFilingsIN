@@ -36,8 +36,7 @@ def get_date_range(date_obj, period):
         month = ((to_date.month - 1) // 3) * 3 + 1
         from_date = to_date.replace(month=month, day=1)
     else:
-        # Fallback to day
-        from_date = to_date
+        raise ValueError(f"Invalid period: {period}")
 
     return from_date, to_date
 
